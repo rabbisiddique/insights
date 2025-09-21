@@ -1,0 +1,210 @@
+const { validationResult } = require("express-validator");
+const { AppError } = require("../middleware/errorHandler");
+const authModal = require("../models/auth.model");
+const noteModel = require("../models/note.model");
+
+const createNote = async (req, res, next) => {
+  const { title, content, tags, isPublic, isArchived, mood } = req.body;
+  const userId = req.userId;
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+    const user = await authModal.findById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    const note = await noteModel.create({
+      user: userId,
+      title,
+      content,
+      tags,
+      mood,
+      isPublic,
+      isArchived,
+    });
+    return res.status(201).json({ message: "note created successfully", note });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateUserNote = async (req, res, next) => {
+  const { title, content, isPublic, tags, isArchived, mood } = req.body;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  next();
+  const { noteId } = req.params;
+  const userId = req.userId;
+  const updatedNoteData = {};
+
+  try {
+    const user = await authModal.findById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+
+    if (title !== undefined) updatedNoteData.title = title;
+    if (content !== undefined) updatedNoteData.content = content;
+    if (mood !== undefined) updatedNoteData.mood = mood;
+    if (isPublic !== undefined) updatedNoteData.isPublic = isPublic;
+    if (tags !== undefined) updatedNoteData.tags = tags;
+    if (isArchived !== undefined) updatedNoteData.isArchived = isArchived;
+
+    const updatedNote = await noteModel.findByIdAndUpdate(
+      { _id: noteId, user: userId },
+      updatedNoteData,
+      { new: true }
+    );
+
+    if (!updatedNote) throw new AppError("Note not found or not yours", 404);
+
+    return res
+      .status(200)
+      .json({ message: "Updated successfully", updatedNote });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getSingleUserNote = async (req, res, next) => {
+  const userId = req.userId;
+  const { id } = req.params;
+  try {
+    const user = await authModal.findById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    const getNote = await noteModel.findOne({ _id: id, user: userId });
+    if (!getNote) {
+      throw new AppError("note not found");
+    }
+    return res.status(200).json({
+      message: "note found successfully",
+      getNote,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAllUserNote = async (req, res, next) => {
+  const userId = req.userId;
+  try {
+    const user = await authModal.findById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    const getNote = await noteModel.find({ user: userId });
+    if (!getNote) {
+      throw new AppError("note not found");
+    }
+    return res.status(200).json({
+      message: `note found successfully. ${getNote.length}`,
+      getNote,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteUserNote = async (req, res, next) => {
+  const { deleteId } = req.params;
+  const userId = req.userId;
+  try {
+    const user = await authModal.findById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    const getNote = await noteModel.findByIdAndDelete({
+      _id: deleteId,
+      user: userId,
+    });
+    if (!getNote) {
+      throw new AppError("note not found", 404);
+    }
+    return res.status(200).json({
+      message: "note deleted successfully",
+      getNote,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteAllUserNote = async (req, res, next) => {
+  const userId = req.userId;
+  try {
+    const user = await authModal.findById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    const result = await noteModel.deleteMany({ user: userId });
+
+    return res.status(200).json({
+      message: `Deleted ${result.deletedCount} notes.`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const filterNotes = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    const { title, tags } = req.body || {};
+    const { page = 1, limit = 10 } = req.query; // pagination optional in query
+
+    // Check user exists
+    const user = await authModal.findById(userId);
+    if (!user) throw new AppError("User not found", 404);
+
+    // Build search conditions
+    const orConditions = [];
+    if (title) orConditions.push({ title: { $regex: title, $options: "i" } });
+    if (tags) orConditions.push({ tags: { $in: tags } });
+
+    if (orConditions.length === 0)
+      return res
+        .status(400)
+        .json({ message: "Please provide title or tags to search" });
+
+    // Pagination and sorting
+    const pageNumber = parseInt(page) || 1;
+    const limitNumber = parseInt(limit) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const notes = await noteModel
+      .find({ user: userId, $or: orConditions })
+      .sort({ createdAt: -1 }) // newest sorting
+      .skip(skip)
+      .limit(limitNumber);
+
+    if (!notes || notes.length === 0) {
+      throw new Error("Note not found", 400);
+    }
+
+    res.status(200).json({
+      message: "Notes found",
+      page: pageNumber,
+      limit: limitNumber,
+      total: notes.length,
+      notes,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  createNote,
+  updateUserNote,
+  getSingleUserNote,
+  getAllUserNote,
+  deleteUserNote,
+  deleteAllUserNote,
+  filterNotes,
+};
