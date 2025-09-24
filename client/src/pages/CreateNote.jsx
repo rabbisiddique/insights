@@ -109,7 +109,7 @@ const CreateNote = () => {
       transition={{ duration: 0.5 }}
       className="relative"
     >
-      <div className="max-w-6xl mx-auto mt-12 p-5 ">
+      <div className="max-w-6xl mx-auto mt-20 p-5 ">
         {/* Header */}
         <div className="w-full h-auto mb-[21px]  p-[20px] inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl -z-10">
           <motion.div

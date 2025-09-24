@@ -7,12 +7,12 @@ const jwt = require("jsonwebtoken");
 const verifyToken = async (req, res, next) => {
   const token = req.cookies.token;
   if (!token) {
-    throw new AppError("Unauthorized - Please login!");
+    return AppError(res, "Unauthorized - Please login!", 401);
   }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (!decoded) {
-      throw new AppError("Unauthorized - invalid token");
+      return AppError(res, "Unauthorized - invalid token", 401);
     }
     const user = await authModal.findById(decoded.userId).select("-password");
     req.userId = decoded.userId;
@@ -25,26 +25,39 @@ const verifyToken = async (req, res, next) => {
 
 const verifyRefreshToken = async (req, res, next) => {
   const refreshToken = req.cookies.refreshToken;
+
   if (!refreshToken) {
-    throw new AppError("Unauthorized - No token provided token");
+    return AppError(res, "Unauthorized - No token provided", 401);
   }
+
   try {
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_TOKEN);
-    if (!decoded) {
-      throw new AppError("Unauthorized - invalid token");
+
+    // double-check decoded object
+    if (!decoded?.userId) {
+      return AppError(res, "Unauthorized - Invalid token", 401);
     }
+
     const user = await authModal.findById(decoded.userId);
+
     if (!user) {
-      return next(new AppError("User not found", 404));
+      return AppError(res, "User not found", 404);
     }
-    const newAccessToken = generateToken(res, decoded.userId);
+
+    // Generate new access token
+    // Generate both new access and refresh tokens
+    const newAccessToken = generateToken(res, user._id);
+    const newRefreshToken = generateRefreshToken(res, user._id);
+
     return res.json({
       success: true,
       accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
       verified: user.verified,
     });
   } catch (err) {
-    next(err);
+    console.error("Refresh token error:", err);
+    return AppError(res, "Unauthorized - Token expired or invalid", 401);
   }
 };
 
@@ -52,15 +65,15 @@ const verifyMagicLink = async (req, res, next) => {
   const { token } = req.params;
   try {
     const magicToken = await MagicLinkToken.findOne({ token });
-    if (!magicToken) return next(new AppError("Invalid or expired link", 400));
+    if (!magicToken) return AppError(res, "Invalid or expired link", 400);
 
-    if (magicToken.used) return next(new AppError("Link already used", 400));
+    if (magicToken.used) return AppError(res, "Link already used", 400);
 
     if (magicToken.expiresAt < Date.now())
-      return next(new AppError("Link expired", 400));
+      return AppError(res, "Link expired", 400);
 
     const user = await authModal.findOne({ email: magicToken.email });
-    if (!user) return next(new AppError("User not found", 404));
+    if (!user) return AppError(res, "User not found", 404);
 
     // Mark user verified
     if (!user.verified) {

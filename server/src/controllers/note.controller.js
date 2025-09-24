@@ -13,7 +13,7 @@ const createNote = async (req, res, next) => {
     }
     const user = await authModal.findById(userId);
     if (!user) {
-      throw new AppError("User not found", 404);
+      return AppError(res, "User not found", 404);
     }
     const note = await noteModel.create({
       user: userId,
@@ -44,7 +44,7 @@ const updateUserNote = async (req, res, next) => {
   try {
     const user = await authModal.findById(userId);
     if (!user) {
-      throw new AppError("User not found", 404);
+      return AppError(res, "User not found", 404);
     }
 
     if (title !== undefined) updatedNoteData.title = title;
@@ -60,7 +60,7 @@ const updateUserNote = async (req, res, next) => {
       { new: true }
     );
 
-    if (!updatedNote) throw new AppError("Note not found or not yours", 404);
+    if (!updatedNote) return AppError(res, "Note not found or not yours", 404);
 
     return res
       .status(200)
@@ -76,11 +76,11 @@ const getSingleUserNote = async (req, res, next) => {
   try {
     const user = await authModal.findById(userId);
     if (!user) {
-      throw new AppError("User not found", 404);
+      return AppError(res, "User not found", 404);
     }
     const getNote = await noteModel.findOne({ _id: id, user: userId });
     if (!getNote) {
-      throw new AppError("note not found");
+      return AppError(res, "note not found");
     }
     return res.status(200).json({
       message: "note found successfully",
@@ -96,11 +96,11 @@ const getAllUserNote = async (req, res, next) => {
   try {
     const user = await authModal.findById(userId);
     if (!user) {
-      throw new AppError("User not found", 404);
+      return AppError(res, "User not found", 404);
     }
     const getNote = await noteModel.find({ user: userId });
     if (!getNote) {
-      throw new AppError("note not found");
+      return AppError(res, "note not found");
     }
     return res.status(200).json({
       message: `note found successfully. ${getNote.length}`,
@@ -117,14 +117,14 @@ const deleteUserNote = async (req, res, next) => {
   try {
     const user = await authModal.findById(userId);
     if (!user) {
-      throw new AppError("User not found", 404);
+      return AppError(res, "User not found", 404);
     }
     const getNote = await noteModel.findByIdAndDelete({
       _id: deleteId,
       user: userId,
     });
     if (!getNote) {
-      throw new AppError("note not found", 404);
+      return AppError(res, "note not found", 404);
     }
     return res.status(200).json({
       message: "note deleted successfully",
@@ -140,7 +140,7 @@ const deleteAllUserNote = async (req, res, next) => {
   try {
     const user = await authModal.findById(userId);
     if (!user) {
-      throw new AppError("User not found", 404);
+      return AppError(res, "User not found", 404);
     }
     const result = await noteModel.deleteMany({ user: userId });
 
@@ -160,7 +160,7 @@ const filterNotes = async (req, res, next) => {
 
     // Check user exists
     const user = await authModal.findById(userId);
-    if (!user) throw new AppError("User not found", 404);
+    if (!user) return AppError(res, "User not found", 404);
 
     // Build search conditions
     const orConditions = [];
@@ -184,7 +184,7 @@ const filterNotes = async (req, res, next) => {
       .limit(limitNumber);
 
     if (!notes || notes.length === 0) {
-      throw new Error("Note not found", 400);
+      Error(res, "Note not found", 400);
     }
 
     res.status(200).json({

@@ -19,7 +19,11 @@ const resetPasswordValidation = require("../middleware/validation/resetPassValid
 const updateProfileValidation = require("../middleware/validation/updateProfileValidation");
 const passport = require("passport");
 const googleSignIn = require("../controllers/googleAuth.controller");
-const { signupAndSignInLimiter } = require("../middleware/rateLimit");
+const {
+  signupAndSignInLimiter,
+  verifyEmailLimiter,
+} = require("../middleware/rateLimit");
+const forgotValidation = require("../middleware/validation/forgotValidation");
 const router = express.Router();
 
 router.post(
@@ -51,18 +55,13 @@ router.post(
 router.post("/sign-out", signOut);
 router.get("/check-auth", verifyToken, checkAuth);
 
-router.post("/forgot-password", forgotPassword);
 router.post(
-  "/reset-password/:token",
-  resetPasswordValidation,
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, errors: errors.array() });
-    }
-    resetPassword(req, res, next);
-  }
+  "/forgot-password",
+  forgotValidation,
+  // verifyEmailLimiter,
+  forgotPassword
 );
+router.post("/reset-password/:token", resetPasswordValidation, resetPassword);
 router.put(
   "/update-profile",
   updateProfileValidation,
@@ -90,6 +89,6 @@ router.get(
   googleSignIn
 );
 
-router.get("/refresh-token", verifyRefreshToken);
+router.post("/refresh-token", verifyRefreshToken);
 
 module.exports = router;

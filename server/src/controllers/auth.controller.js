@@ -8,10 +8,13 @@ const {
 } = require("../utils/generateToken");
 const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");
+const { validationResult } = require("express-validator");
 
 const signUp = async (req, res, next) => {
   const { username, email, password, avatar } = req.body;
   const saltRounds = 10;
+  let avatarUrl = "";
+  let avatarPublicId = "";
   try {
     const existingUser = await authModal.findOne({
       $or: [{ email }, { username }],
@@ -19,24 +22,28 @@ const signUp = async (req, res, next) => {
 
     if (existingUser) {
       if (existingUser.email === email) {
-        throw new AppError("Email already exists!", 400);
+        return AppError(res, "Email already exists!", 400);
       }
       if (existingUser.username === username) {
-        throw new AppError("Username already exists!", 400);
+        return AppError(res, "Username already exists!", 400);
       }
     }
 
     const salt = await bcrypt.genSalt(saltRounds);
     const hashPassword = await bcrypt.hash(password, salt);
 
-    const uploadResult = await cloudinary.uploader.upload(avatar);
+    if (avatar) {
+      const uploadResult = await cloudinary.uploader.upload(avatar);
+      avatarUrl = uploadResult.secure_url;
+      avatarPublicId = uploadResult.public_id;
+    }
 
     const newUser = await authModal.create({
       username,
       email,
       password: hashPassword,
-      avatar: uploadResult.secure_url,
-      avatarPublicId: uploadResult.public_id,
+      avatar: avatarUrl,
+      avatarPublicId,
       verified: false,
     });
     generateToken(res, newUser._id);
@@ -65,11 +72,11 @@ const signIn = async (req, res, next) => {
   try {
     const user = await authModal.findOne({ email });
     if (!user) {
-      throw new AppError("user not found", 401);
+      return AppError(res, "user not found", 401);
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      throw new AppError("password is wrong", 401);
+      return AppError(res, "password is wrong", 401);
     }
     generateToken(res, user._id);
     generateRefreshToken(res, user._id);
@@ -114,22 +121,34 @@ const signOut = async (req, res, next) => {
 
 const checkAuth = async (req, res, next) => {
   try {
-    const user = await authModal.findById(req.userId).select("-password");
-    if (!user) {
-      throw new AppError("user not found", 404);
-    }
+    const userId = req.userId;
+    if (!userId)
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated. Kindly log in!" });
+
+    const user = await authModal.findById(userId).select("-password");
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+
     return res.status(200).json({ success: true, user });
   } catch (error) {
-    next(err);
+    next(error);
   }
 };
 
 const forgotPassword = async (req, res, next) => {
   const { email } = req.body;
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
     const user = await authModal.findOne({ email });
     if (!user) {
-      throw new AppError("user not found", 404);
+      return AppError(res, "user not found", 404);
     }
     // generate rest token;
 
@@ -142,7 +161,8 @@ const forgotPassword = async (req, res, next) => {
     user.resetPasswordToken = resetTokenHash;
     user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 mins for expires
     await user.save();
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}?email=`;
+
     await sendEmail({
       to: user.email,
       subject: "Password Reset Request",
@@ -155,7 +175,8 @@ const forgotPassword = async (req, res, next) => {
     });
     return res.status(200).json({
       success: true,
-      message: "An email has been sent with password reset instructions",
+      message:
+        "Almost there! Check your email and follow the instructions to reset your password.",
       resetUrl,
     });
   } catch (err) {
@@ -168,12 +189,16 @@ const resetPassword = async (req, res, next) => {
   const { newPassword } = req.body;
 
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
     const user = await authModal.findOne({
       resetPasswordToken: tokenHash,
       resetPasswordExpires: { $gt: Date.now() },
     });
-    if (!user) throw new AppError("Invalid or expired token", 400);
+    if (!user) return AppError(res, "Invalid or expired token", 400);
     const saltRounds = 10;
     user.password = await bcrypt.hash(newPassword, saltRounds);
     user.resetPasswordExpires = undefined;
@@ -181,7 +206,7 @@ const resetPassword = async (req, res, next) => {
     await user.save();
     return res.status(200).json({
       success: true,
-      message: "Password reset successful",
+      message: "Success! Your password has been reset.",
     });
   } catch (err) {
     next(err);
@@ -198,14 +223,14 @@ const updateProfile = async (req, res, next) => {
 
     // Prevent updating someone else's profile
     if (user._id.toString() !== req.userId) {
-      throw new AppError("Unauthorized to update this profile", 403);
+      return AppError(res, "Unauthorized to update this profile", 403);
     }
 
     // Username update
     if (username) {
       const exists = await authModal.findOne({ username });
       if (exists && exists._id.toString() !== req.userId) {
-        throw new AppError("Username already taken", 400);
+        return AppError(res, "Username already taken", 400);
       }
       updateData.username = username;
     }
@@ -213,11 +238,11 @@ const updateProfile = async (req, res, next) => {
     // Password update
     if (password) {
       if (!currentPassword) {
-        throw new AppError("Current password is required");
+        return AppError(res, "Current password is required");
       }
       const isMatch = await bcrypt.compare(currentPassword, user.password);
       if (!isMatch) {
-        throw new AppError("Current password is incorrect");
+        return AppError(res, "Current password is incorrect");
       }
       const salt = await bcrypt.genSalt(10);
       updateData.password = await bcrypt.hash(password, salt);

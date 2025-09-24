@@ -30,13 +30,13 @@ const signUpValidation = checkSchema({
         "Password must contain uppercase, lowercase, number, and special character",
     },
   },
-  avatar: {
-    in: ["body"],
-    optional: true,
-    isURL: {
-      errorMessage: "Avatar must be a valid URL",
-    },
-  },
+  // avatar: {
+  //   in: ["body"],
+  //   optional: false,
+  //   isURL: {
+  //     errorMessage: "Avatar must be a valid URL",
+  //   },
+  // },
 });
 
 module.exports = signUpValidation;

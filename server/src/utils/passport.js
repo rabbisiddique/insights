@@ -25,8 +25,6 @@ passport.use(
         } else if (!user.googleId) {
           user.googleId = profile.id;
           await user.save();
-        }else{
-          throw new AppError("User already exists")
         }
 
         return done(null, user);

@@ -1,14 +1,23 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Lock, Mail, Moon, Sun, User } from "lucide-react";
+import "ldrs/react/Ring2.css";
+import { ArrowRight, Eye, EyeOff, Mail, User } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
+import { Link, useNavigate } from "react-router-dom";
+import { useSignUpMutation } from "../features/auth/authAPI";
 import { useDarkMode } from "../hooks/useDarkMode";
-
+import { useGoogle } from "../hooks/useGoogle";
+import { showApiErrors } from "../utils/ShowApiError";
 export default function SignUpPage() {
   const [step, setStep] = useState(1);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { theme, toggleTheme } = useDarkMode();
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [signUp, { isLoading, isError }] = useSignUpMutation();
+  const { handleGoogleSubmit, isLoading: googleIsLoading } = useGoogle();
+  const navigate = useNavigate();
 
   const handleNext = () => {
     if (email) {
@@ -16,7 +25,24 @@ export default function SignUpPage() {
     }
   };
 
-  const { theme, toggleTheme } = useDarkMode();
+  const handleSubmit = async () => {
+    try {
+      const payload = { username, email, password };
+      await signUp(payload).unwrap();
+
+      setTimeout(() => {
+        navigate("/home");
+        toast.success("Welcome to Note Wise!");
+      }, 100);
+      setUsername("");
+      setEmail("");
+      setPassword("");
+    } catch (error) {
+      console.log(error);
+
+      showApiErrors(error, undefined, setStep);
+    }
+  };
 
   return (
     <motion.div
@@ -68,16 +94,45 @@ export default function SignUpPage() {
               NotesAI
             </motion.h1>
             <motion.button
-              whileHover={{ scale: 1.1, rotate: 180 }}
-              whileTap={{ scale: 0.9 }}
               onClick={toggleTheme}
-              className="p-3 cursor-pointer rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-700 transition-all shadow-lg border border-gray-200/50 dark:border-gray-700/50"
+              className="p-3 rounded-xl bg-gray-100 cursor-pointer dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              {theme === "light" ? (
-                <Sun className="w-5 h-5 text-yellow-500" />
-              ) : (
-                <Moon className="w-5 h-5 text-indigo-600" />
-              )}
+              <motion.div
+                animate={{ rotate: theme === "light" ? 180 : 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                {theme === "light" ? (
+                  <svg
+                    className="w-5 h-5 text-yellow-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-5 h-5 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                    />
+                  </svg>
+                )}
+              </motion.div>
             </motion.button>
           </div>
           <p className="text-lg text-gray-600 dark:text-gray-300 font-medium">
@@ -90,7 +145,6 @@ export default function SignUpPage() {
             className="h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 rounded-full mt-2 mx-auto max-w-32"
           />
         </motion.div>
-
         {/* Login Form */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -133,28 +187,37 @@ export default function SignUpPage() {
                 <motion.button
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
-                  // onClick={handleGoogleLogin}
+                  onClick={handleGoogleSubmit}
                   className="w-full cursor-pointer bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-400 text-gray-700 dark:text-gray-300 py-3 rounded-xl font-medium flex items-center justify-center space-x-3 transition-all shadow-lg hover:shadow-xl"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                  </svg>
-                  <span>Continue with Google</span>
+                  {googleIsLoading ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-[#ff7373] border-t-transparent rounded-full animate-spin"></span>
+                      <span>Continue with Google</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" viewBox="0 0 24 24">
+                        <path
+                          fill="#4285F4"
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                        />
+                        <path
+                          fill="#EA4335"
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                        />
+                      </svg>
+                      <span>Continue with Google</span>
+                    </>
+                  )}
                 </motion.button>
 
                 <div className="relative my-6">
@@ -195,7 +258,9 @@ export default function SignUpPage() {
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all shadow-lg"
+                      className="w-full pl-12 pr-4 py-4 border-2 outline-none border-gray-200 dark:border-gray-600
+                       rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 bg-white
+                       dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-300 shadow-sm"
                       placeholder="Enter your username"
                     />
                   </div>
@@ -206,11 +271,14 @@ export default function SignUpPage() {
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+
                     <motion.input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all shadow-lg"
+                      className="w-full pl-12 pr-4 py-4 border-2 outline-none border-gray-200 dark:border-gray-600
+                       rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 bg-white
+                       dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-300 shadow-sm"
                       placeholder="Enter your email"
                     />
                   </div>
@@ -238,18 +306,30 @@ export default function SignUpPage() {
             >
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
                     Password
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <motion.input
-                      type="password"
+                    <input
+                      type={showNewPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all shadow-lg"
-                      placeholder="Enter your password"
+                      placeholder="Enter current password"
+                      className="w-full pr-12 pl-4 py-4 border-2 outline-none border-gray-200 dark:border-gray-600 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-300 shadow-sm"
                     />
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </motion.button>
                   </div>
                 </div>
                 <div className="flex space-x-3">
@@ -266,8 +346,18 @@ export default function SignUpPage() {
                     whileTap={{ scale: 0.98 }}
                     disabled={!password}
                     className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white py-4 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl cursor-pointer"
+                    onClick={handleSubmit}
                   >
-                    Sign Up
+                    <span className="flex justify-center items-center gap-2">
+                      {isLoading ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                          signing...
+                        </>
+                      ) : (
+                        "Sign Up"
+                      )}
+                    </span>
                   </motion.button>
                 </div>
               </div>

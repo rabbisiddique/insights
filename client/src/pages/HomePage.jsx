@@ -127,7 +127,7 @@ export default function HomePage() {
     <>
       {/* Header */}
       <div className="relative">
-        <div className="max-w-6xl mx-auto mt-4 p-5">
+        <div className="max-w-6xl mx-auto mt-20 p-5">
           <div className="w-full h-auto mb-[21px] p-[20px] max-xs:mb-0 inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl -z-10">
             <div className="flex items-center justify-between mb-8 ">
               <motion.div
@@ -370,7 +370,10 @@ export default function HomePage() {
     "
                     >
                       <div className="flex items-center">
-                        <button className="flex cursor-pointer   justify-center items-center gap-1 px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-all duration-200" onClick={() => navigate(`/notes/${note.id}`)}>
+                        <button
+                          className="flex cursor-pointer   justify-center items-center gap-1 px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-all duration-200"
+                          onClick={() => navigate(`/notes/${note.id}`)}
+                        >
                           <Pencil size={15} />
                         </button>
                         <button

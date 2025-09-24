@@ -8,10 +8,10 @@ const sendMagicLink = async (req, res, next) => {
   try {
     const userId = req.userId;
     if (!userId) {
-      throw new AppError("Invalid userId");
+      return AppError(res, "Invalid userId");
     }
     const user = await authModal.findById(userId);
-    if (!user) return next(new AppError("User not found", 404));
+    if (!user) return AppError(res, "User not found", 404);
 
     if (user.verified) {
       return res.status(400).json({ message: "User already verified" });

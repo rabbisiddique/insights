@@ -15,13 +15,9 @@ const generateToken = (res, userId) => {
 };
 
 const generateRefreshToken = (res, userId) => {
-  const refreshToken = jwt.sign(
-    {userId },
-    process.env.JWT_REFRESH_TOKEN,
-    {
-      expiresIn: "30d",
-    }
-  );
+  const refreshToken = jwt.sign({ userId }, process.env.JWT_REFRESH_TOKEN, {
+    expiresIn: "30d",
+  });
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,

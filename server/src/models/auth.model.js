@@ -24,10 +24,12 @@ const schema = new Schema(
     avatar: {
       type: String,
       required: false,
+      default: "https://i.ibb.co/default-avatar.png", // replace with your default
     },
     avatarPublicId: {
       type: String,
       required: false,
+      default: "",
     },
     verified: { type: Boolean, default: false },
     resetPasswordToken: {

@@ -6,12 +6,12 @@ const errorHandler = (err, req, res, next) => {
   });
 };
 
-class AppError extends Error {
-  constructor(message, statusCode = 500) {
-    super(message);
-    this.statusCode = statusCode;
-    this.isOperational = true;
-  }
+function AppError(res, message, statusCode = 500) {
+  return res.status(statusCode).json({
+    success: false,
+    statusCode,
+    message,
+  });
 }
 
 module.exports = { errorHandler, AppError };

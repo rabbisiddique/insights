@@ -4,7 +4,7 @@ import AppWrapper from "./AppWrapper";
 const App = () => {
   return (
     <Router>
-      <AppWrapper />  
+      <AppWrapper />
     </Router>
   );
 };

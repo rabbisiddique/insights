@@ -13,11 +13,22 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useGetUserQuery } from "../features/auth/authAPI";
 
 const NotesDashboard = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+
+  const { data: user, isLoading } = useGetUserQuery(undefined);
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (user) {
+        navigate("/home");
+      }
+    }
+  }, [user, isLoading, navigate]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -221,14 +232,15 @@ const NotesDashboard = () => {
           variants={itemVariants}
           className="flex flex-col sm:flex-row gap-6 justify-center mb-16"
         >
-          <Link to={"/login"}>
+          <Link
+            to={user ? "/home" : "/login"} // redirect dynamically
+          >
             <motion.button
               whileHover={{
                 scale: 1.05,
                 boxShadow: "0 20px 40px rgba(59, 130, 246, 0.3)",
               }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setIsLoggedIn(!isLoggedIn)}
               className="group cursor-pointer relative px-12 py-5 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white rounded-2xl font-bold text-xl shadow-2xl overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-blue-700 via-purple-700 to-indigo-700 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
@@ -239,6 +251,7 @@ const NotesDashboard = () => {
               </span>
             </motion.button>
           </Link>
+
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
@@ -358,31 +371,22 @@ const NotesDashboard = () => {
             </p>
 
             <Link
-              Link
-              to={"/login"}
-              className="flex flex-col sm:flex-row gap-6 justify-center "
+              to={user ? "/home" : "/login"} // redirect dynamically
             >
               <motion.button
                 whileHover={{
                   scale: 1.05,
-                  boxShadow: "0 25px 50px rgba(255, 255, 255, 0.2)",
+                  boxShadow: "0 20px 40px rgba(59, 130, 246, 0.3)",
                 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-12 py-5 cursor-pointer bg-white text-blue-900 rounded-2xl font-black text-xl shadow-2xl hover:shadow-white/20 transition-all duration-300"
+                className="group cursor-pointer relative px-12 py-5 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white rounded-2xl font-bold text-xl shadow-2xl overflow-hidden"
               >
-                <span className="flex items-center justify-center space-x-3">
-                  <Shield className="w-6 h-6" />
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-700 via-purple-700 to-indigo-700 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
+                <span className="relative flex items-center justify-center space-x-3 cursor-pointer">
+                  <Zap className="w-6 h-6" />
                   <span>Start Now</span>
-                  <ArrowRight className="w-6 h-6" />
+                  <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
                 </span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="px-12 py-5 border-2 border-white/30 text-white hover:bg-white/10 rounded-2xl font-bold text-xl backdrop-blur-xl transition-all duration-300"
-              >
-                Schedule Demo
               </motion.button>
             </Link>
 

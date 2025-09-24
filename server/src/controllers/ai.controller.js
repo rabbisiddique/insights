@@ -23,10 +23,10 @@ const summarizeNote = async (req, res, next) => {
 
   try {
     const user = await authModal.findById(userId);
-    if (!user) throw new AppError("User not found", 404);
+    if (!user) return AppError(res, "User not found", 404);
 
     const note = await noteModel.findOne({ _id: noteId, user: userId });
-    if (!note) throw new AppError("Note not found", 404);
+    if (!note) return AppError(res, "Note not found", 404);
 
     const prompt = summaryPrompts(note);
     let summary = await generateContent(prompt);
@@ -51,10 +51,10 @@ const suggestTags = async (req, res, next) => {
   const { noteId } = req.body;
   const userId = req.userId;
   const user = await authModal.findById(userId);
-  if (!user) throw new AppError("User not found", 404);
+  if (!user) return AppError(res, "User not found", 404);
   try {
     const note = await noteModel.findOne({ _id: noteId, user: userId });
-    if (!note) throw new AppError("Note not found", 404);
+    if (!note) return AppError(res, "Note not found", 404);
 
     // Generate AI output
     const prompt = suggestTagsPrompts(note);
@@ -115,11 +115,11 @@ const questionAnswer = async (req, res, next) => {
 
     // Find user and note
     const user = await authModal.findById(userId);
-    if (!user) throw new AppError("User not found", 404);
+    if (!user) return AppError(res, "User not found", 404);
 
     const note = await noteModel.findOne({ _id: noteId, user: userId });
     if (!note) {
-      throw new AppError("Note not found.", 404);
+      return AppError(res, "Note not found.", 404);
     }
 
     // Simple prompt for AI
@@ -147,7 +147,7 @@ const improveWriting = async (req, res, next) => {
   const userId = req.userId;
   try {
     const note = await noteModel.findOne({ _id: noteId, user: userId });
-    if (!note) throw new AppError("Note not found", 404);
+    if (!note) return AppError(res, "Note not found", 404);
     const target = [];
 
     let improvedTitle = title;
@@ -201,7 +201,7 @@ const chatOrCreateNote = async (req, res, next) => {
     return res.status(400).json({ success: false, errors: errors.array() });
   }
 
-  if (!userId) return next(new AppError("User not found", 400));
+  if (!userId) return AppError(res, "User not found", 400);
 
   try {
     // ---------------------
@@ -312,8 +312,10 @@ const chatOrCreateNote = async (req, res, next) => {
     // ---------------------
     // 4️⃣ Fallback if no input
     // ---------------------
-    return next(
-      new AppError("Invalid request: provide either message or topic", 400)
+    return AppError(
+      res,
+      "Invalid request: provide either message or topic",
+      400
     );
   } catch (error) {
     next(error);
@@ -331,7 +333,7 @@ const aiReadNote = async (req, res, next) => {
 
     // Fetch note
     const note = await noteModel.findOne({ _id: noteId, user: userId });
-    if (!note) throw new AppError("Note not found", 404);
+    if (!note) return AppError(res, "Note not found", 404);
 
     // AI prompt
     const aiPrompt = readChatPrompts(note, question);
