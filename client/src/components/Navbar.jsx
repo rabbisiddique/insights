@@ -137,9 +137,9 @@ const Navbar = () => {
               </motion.button>
               <div className="flex items-center space-x-3">
                 <div className="relative">
-                  <div className="w-10 h-10 ">
+                  <div className="h-11 w-11 rounded-full ring-2 object-cover ring-indigo-500/20 hover:ring-indigo-500/40  transition-all duration-200">
                     <img
-                      className="rounded-full ring-2  ring-indigo-500/20 hover:ring-indigo-500/40  transition-all duration-200"
+                      className="w-full h-full object-cover rounded-full"
                       src={
                         user?.avatar ||
                         "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?semt=ais_incoming&w=740&q=80"

@@ -14,7 +14,7 @@ const sendEmail = async ({ to, subject, html }) => {
     });
 
     const mailOptions = {
-      from: `"InsightHub" <${process.env.EMAIL_USER}>`,
+      from: `"InsightHub" <no-reply@yourdomain.com>`,
       to,
       subject,
       html,

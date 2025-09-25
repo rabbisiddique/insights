@@ -3,7 +3,7 @@ import { ArrowRight, Eye, EyeOff, Mail } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
-import { useSignInMutation } from "../features/auth/authAPI";
+import { useGetUserQuery, useSignInMutation } from "../features/auth/authAPI";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { useGoogle } from "../hooks/useGoogle";
 import { showApiErrors } from "../utils/ShowApiError";
@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [signIn, { isLoading }] = useSignInMutation();
+  const { refetch } = useGetUserQuery();
   const { theme, toggleTheme } = useDarkMode();
   const { handleGoogleSubmit, isLoading: googleIsLoading } = useGoogle();
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function LoginPage() {
     try {
       await signIn(payload).unwrap();
       toast.success("Welcome to Note Wise");
+      await refetch();
       navigate("/home");
       setEmail("");
       setPassword("");
@@ -324,6 +326,7 @@ export default function LoginPage() {
                     Back
                   </motion.button>
                   <motion.button
+                    type="submit"
                     whileHover={{ scale: 1.02, y: -2 }}
                     whileTap={{ scale: 0.98 }}
                     disabled={!password || isLoading}

@@ -214,7 +214,7 @@ const resetPassword = async (req, res, next) => {
 };
 
 const updateProfile = async (req, res, next) => {
-  const { username, password, currentPassword, avatar } = req.body;
+  const { username, newPassword, currentPassword, avatar } = req.body;
   const updateData = {};
 
   try {
@@ -230,22 +230,22 @@ const updateProfile = async (req, res, next) => {
     if (username) {
       const exists = await authModal.findOne({ username });
       if (exists && exists._id.toString() !== req.userId) {
-        return AppError(res, "Username already taken", 400);
+        return AppError(res, "Username already token!", 403);
       }
       updateData.username = username;
     }
 
     // Password update
-    if (password) {
+    if (newPassword) {
       if (!currentPassword) {
-        return AppError(res, "Current password is required");
+        return AppError(res, "current password is required", 403);
       }
       const isMatch = await bcrypt.compare(currentPassword, user.password);
       if (!isMatch) {
-        return AppError(res, "Current password is incorrect");
+        return AppError(res, "currentPassword is wrong!", 401);
       }
       const salt = await bcrypt.genSalt(10);
-      updateData.password = await bcrypt.hash(password, salt);
+      updateData.password = await bcrypt.hash(newPassword, salt);
     }
 
     if (avatar) {
@@ -275,6 +275,8 @@ const updateProfile = async (req, res, next) => {
       user: {
         username: updatedUser.username,
         avatar: updatedUser.avatar,
+        createdAt: updatedUser.createdAt,
+        updatedAt: updatedUser.updatedAt,
       },
     });
   } catch (err) {

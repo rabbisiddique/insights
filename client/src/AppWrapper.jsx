@@ -2,13 +2,7 @@ import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
-import {
-  Navigate,
-  Route,
-  Routes,
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./hooks/useAuth";
@@ -22,6 +16,7 @@ import NotesDashboard from "./pages/NotesDashboard";
 import ProfilePage from "./pages/ProfilePage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SignUpPage from "./pages/SignUpPage";
+import VerifyYourEmail from "./pages/VerifyYourEmail";
 const AppWrapper = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -112,19 +107,10 @@ const AppWrapper = () => {
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<NotesDashboard />} />
-          <Route
-            path="/login"
-            element={
-              !isAuthenticated ? <LoginPage /> : <Navigate to={"/home"} />
-            }
-          />
-          <Route
-            path="/sign-up"
-            element={
-              !isAuthenticated ? <SignUpPage /> : <Navigate to={"/home"} />
-            }
-          />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/sign-up" element={<SignUpPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-email/:token" element={<VerifyYourEmail />} />
           <Route
             path="/reset-password/:token"
             element={<ResetPasswordPage />}

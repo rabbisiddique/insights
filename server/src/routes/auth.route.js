@@ -58,10 +58,11 @@ router.get("/check-auth", verifyToken, checkAuth);
 router.post(
   "/forgot-password",
   forgotValidation,
-  // verifyEmailLimiter,
+  verifyEmailLimiter,
   forgotPassword
 );
 router.post("/reset-password/:token", resetPasswordValidation, resetPassword);
+
 router.put(
   "/update-profile",
   updateProfileValidation,
