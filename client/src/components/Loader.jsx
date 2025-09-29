@@ -1,5 +1,8 @@
-import { ClipLoader } from "react-spinners";
-
-export default function Loader() {
-  return <ClipLoader size={30} color="#4f46e5" />;
+export default function Loader({ text }) {
+  return (
+    <>
+      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+      <span>{text}</span>
+    </>
+  );
 }

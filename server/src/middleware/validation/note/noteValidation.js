@@ -23,9 +23,9 @@ const noteSchemaValidation = checkSchema({
   },
   tags: {
     in: ["body"],
-    isLength: {
+    isArray: {
       options: { min: 1, max: 10 },
-      errorMessage: "Tags must contain between 1 and 10 items",
+      errorMessage: "Tags must be between 1 and 10",
     },
   },
 });

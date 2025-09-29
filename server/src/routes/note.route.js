@@ -7,6 +7,7 @@ const {
   deleteUserNote,
   deleteAllUserNote,
   filterNotes,
+  archiveNote,
 } = require("../controllers/note.controller");
 const { verifyToken } = require("../middleware/verifyToken");
 const noteSchemaValidation = require("../middleware/validation/note/noteValidation");
@@ -21,8 +22,10 @@ router.put(
   verifyToken,
   updateUserNote
 );
-router.get("/get-single-note/:id", verifyToken, getSingleUserNote);
+router.get("/get-single-note/:noteId", verifyToken, getSingleUserNote);
 router.get("/get-all-note", verifyToken, getAllUserNote);
+router.patch("/archive-note/:id", verifyToken, archiveNote);
+
 router.delete("/delete-note/:deleteId", verifyToken, deleteUserNote);
 router.delete("/delete-all-note", verifyToken, deleteAllUserNote);
 

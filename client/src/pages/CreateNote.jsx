@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Archive,
   ArrowLeft,
+  BadgePlus,
   Brain,
   ChevronDown,
   Edit3,
@@ -13,36 +14,81 @@ import {
   Tags,
   Wand2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
+import Loader from "../components/Loader";
+import {
+  useCreateNoteCardMutation,
+  useGetAllNoteQuery,
+  useUpdateNoteMutation,
+} from "../features/notes/notesAPI";
+import { showApiErrors } from "../utils/ShowApiError";
 const CreateNote = () => {
+  const [tagInput, setTagInput] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     content: "",
-    selectMood: "Happy",
+    tags: [],
     isPublic: false,
     isArchived: false,
-    tags: [],
-    tagInput: "",
+    mood: "Happy",
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [createNoteCard, { isLoading: createIsLoading }] =
+    useCreateNoteCardMutation();
+  const [updateNote, { isLoading: updateIsLoading }] = useUpdateNoteMutation();
+  const navigate = useNavigate();
+  const { data } = useGetAllNoteQuery();
+  const { noteId } = useParams();
+  const isEdit = noteId !== undefined && noteId !== "new";
+  const notes = useMemo(() => data?.notes || [], [data?.notes]);
 
-  // useEffect(() => {
-  //   if (isEdit) {
-  //     setFormData({
-  //       title: data.title || "",
-  //       content: data.content || "",
-  //       selectMood: data.selectMood || "Happy",
-  //       isPublic: data.isPublic || false,
-  //       isArchived: data.isArchived || false,
-  //       tags: data.tags || [],
-  //     });
-  //   }
-  // }, []);
+  useEffect(() => {
+    if (isEdit && notes.length > 0) {
+      const currentNote = notes.find((n) => n._id === noteId);
+      if (currentNote) {
+        setFormData({
+          title: currentNote.title || "",
+          content: currentNote.content || "",
+          mood: currentNote.mood || "Happy",
+          isPublic: currentNote.isPublic || false,
+          isArchived: currentNote.isArchived || false,
+          tags: currentNote.tags || [],
+        });
+      }
+    }
+  }, [isEdit, noteId, notes]);
 
-  const handleSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
-    console.log(formData);
+    try {
+      // if (!noteId) return;
+
+      if (isEdit) {
+        // Update
+        const res = await updateNote({ noteId, formData }).unwrap();
+        console.log("Updated note:", res);
+        toast.success("Note updated!");
+      } else {
+        // Create
+        await createNoteCard(formData).unwrap();
+        toast.success("Note created!");
+      }
+
+      // Reset form & redirect
+      setFormData({
+        title: "",
+        content: "",
+        tags: [],
+        isPublic: false,
+        isArchived: false,
+        mood: "Happy",
+      });
+      navigate("/home");
+    } catch (error) {
+      showApiErrors(error);
+    }
   };
 
   const handleChange = (e) => {
@@ -54,11 +100,6 @@ const CreateNote = () => {
     }));
   };
 
-  const navigate = useNavigate();
-  const { noteId } = useParams();
-  console.log(noteId);
-  const isEdit = !!noteId;
-
   const moodOptions = [
     { value: "Happy", emoji: "😊" },
     { value: "Over the Moon", emoji: "🌙" },
@@ -67,13 +108,13 @@ const CreateNote = () => {
   ];
 
   const handleAddTag = () => {
-    const tag = formData.tagInput?.trim();
+    const tag = tagInput?.trim();
     if (tag && !formData.tags.includes(tag)) {
       setFormData((prev) => ({
         ...prev,
         tags: [...prev.tags, tag],
-        tagInput: "",
       }));
+      setTagInput(""); // Reset input
     }
   };
 
@@ -148,18 +189,35 @@ const CreateNote = () => {
                 <Brain className="w-4 h-4 ml-2 font-bold" />
               </button>
               <motion.button
+                type="submit"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 
              text-white px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl 
              transition-all duration-200 transform hover:scale-105 flex justify-center items-center gap-2.5 
-             rounded-xl cursor-pointer max-xs:py-2 max-xs:px-4 max-xs:text-sm max-extra-xs:py-2 max-extra-xs:px-3 max-extra-xs:text-xs"
-                onClick={handleSubmit}
+             rounded-xl cursor-pointer max-xs:py-2 max-xs:px-4 max-xs:text-sm max-extra-xs:py-2 max-extra-xs:px-3 max-extra-xs:text-xs disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed"
+                disabled={createIsLoading || updateIsLoading}
+                onClick={handleFormSubmit}
               >
-                <Edit3 className="w-4 h-4 max-xs:w-3 max-xs:h-3" />
-                <span className="">
-                  {isEdit ? "Update Note" : "Create Note"}
-                </span>
+                {createIsLoading ? (
+                  <>
+                    <Loader text={"Creating..."} />
+                  </>
+                ) : updateIsLoading ? (
+                  <>
+                    <Loader text={"Updating..."} />
+                  </>
+                ) : isEdit ? (
+                  <>
+                    <Edit3 className="w-4 h-4 max-xs:w-3 max-xs:h-3" />
+                    Update Note
+                  </>
+                ) : (
+                  <>
+                    <BadgePlus className="w-4 h-4 max-xs:w-3 max-xs:h-3" />
+                    Create Note
+                  </>
+                )}
               </motion.button>
             </div>
           </motion.div>
@@ -190,12 +248,52 @@ const CreateNote = () => {
                         <label className="block text-sm font-semibold text-gray-700 mb-3">
                           Title
                         </label>
-                        <button
-                          className={`${
-                            !formData.title
-                              ? "hidden"
-                              : "cursor-pointer mb-2 inline-flex items-center h-8 justify-center gap-2 whitespace-nowrap font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:text-accent-foreground rounded-md px-3 text-sm transition-all duration-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 "
-                          }`}
+                        <div className="h-10 flex items-center">
+                          <AnimatePresence>
+                            {formData.title && (
+                              <motion.button
+                                key="ai-button"
+                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                transition={{
+                                  duration: 0.3,
+                                  ease: "easeInOut",
+                                }}
+                                className="cursor-pointer mb-2 inline-flex items-center h-8 justify-center gap-2 whitespace-nowrap font-medium 
+                 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring 
+                 disabled:pointer-events-none disabled:opacity-50 
+                 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 
+                 hover:text-accent-foreground rounded-md px-3 text-sm transition-all duration-200 
+                 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="24"
+                                  height="24"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="lucide lucide-sparkles w-4 h-4 mr-2 text-indigo-600"
+                                  aria-hidden="true"
+                                >
+                                  <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
+                                  <path d="M20 3v4"></path>
+                                  <path d="M22 5h-4"></path>
+                                  <path d="M4 17v2"></path>
+                                  <path d="M5 18H3"></path>
+                                </svg>
+                                Improve with AI
+                              </motion.button>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                        {/* <button
+                          className="inline-flex mb-2 items-center justify-center gap-2 whitespace-nowrap font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-8 rounded-md px-3 text-sm transition-all duration-200 text-green-600 bg-green-50 dark:bg-green-900/20"
+                          disabled=""
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -204,20 +302,16 @@ const CreateNote = () => {
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="lucide lucide-sparkles w-4 h-4 mr-2 text-indigo-600"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="lucide lucide-zap w-4 h-4 mr-2 text-green-600"
                             aria-hidden="true"
                           >
-                            <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
-                            <path d="M20 3v4"></path>
-                            <path d="M22 5h-4"></path>
-                            <path d="M4 17v2"></path>
-                            <path d="M5 18H3"></path>
+                            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
                           </svg>
-                          Improve with AI
-                        </button>
+                          Improved ✓
+                        </button> */}
                       </div>
                       <input
                         type="text"
@@ -235,34 +329,49 @@ const CreateNote = () => {
                         <label className="block text-sm font-semibold text-gray-700 mb-3">
                           Content
                         </label>
-                        <button
-                          className={`${
-                            !formData.content
-                              ? "hidden"
-                              : "cursor-pointer mb-2 inline-flex items-center justify-center gap-2 h-8 whitespace-nowrap font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:text-accent-foreground rounded-md px-3 text-sm transition-all duration-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 "
-                          }`}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="lucide lucide-sparkles w-4 h-4 mr-2 text-indigo-600"
-                            aria-hidden="true"
-                          >
-                            <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
-                            <path d="M20 3v4"></path>
-                            <path d="M22 5h-4"></path>
-                            <path d="M4 17v2"></path>
-                            <path d="M5 18H3"></path>
-                          </svg>
-                          Improve with AI
-                        </button>
+                        <div className="h-10 flex items-center">
+                          <AnimatePresence>
+                            {formData.content && (
+                              <motion.button
+                                key="ai-button"
+                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                transition={{
+                                  duration: 0.3,
+                                  ease: "easeInOut",
+                                }}
+                                className="cursor-pointer mb-2 inline-flex items-center h-8 justify-center gap-2 whitespace-nowrap font-medium 
+                 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring 
+                 disabled:pointer-events-none disabled:opacity-50 
+                 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 
+                 hover:text-accent-foreground rounded-md px-3 text-sm transition-all duration-200 
+                 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="24"
+                                  height="24"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="lucide lucide-sparkles w-4 h-4 mr-2 text-indigo-600"
+                                  aria-hidden="true"
+                                >
+                                  <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
+                                  <path d="M20 3v4"></path>
+                                  <path d="M22 5h-4"></path>
+                                  <path d="M4 17v2"></path>
+                                  <path d="M5 18H3"></path>
+                                </svg>
+                                Improve with AI
+                              </motion.button>
+                            )}
+                          </AnimatePresence>
+                        </div>
                         {/* <button
                         className="inline-flex mb-2 items-center justify-center gap-2 whitespace-nowrap font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-8 rounded-md px-3 text-sm transition-all duration-200 text-green-600 bg-green-50 dark:bg-green-900/20"
                         disabled=""
@@ -429,13 +538,11 @@ const CreateNote = () => {
                         <span className="text-lg">
                           {
                             moodOptions.find(
-                              (mood) => mood.value === formData.selectMood
+                              (mood) => mood.value === formData.mood
                             )?.emoji
                           }
                         </span>
-                        <span className="font-medium">
-                          {formData.selectMood}
-                        </span>
+                        <span className="font-medium">{formData.mood}</span>
                       </div>
                       <motion.div
                         animate={{ rotate: isDropdownOpen ? 180 : 0 }}
@@ -461,7 +568,7 @@ const CreateNote = () => {
                               onClick={() => {
                                 setFormData((prev) => ({
                                   ...prev,
-                                  selectMood: mood.value,
+                                  mood: mood.value,
                                 }));
                                 setIsDropdownOpen(false);
                               }}
@@ -603,9 +710,8 @@ const CreateNote = () => {
                   <motion.input
                     whileFocus={{ scale: 1.01 }}
                     type="text"
-                    name="tagInput"
-                    value={formData.tagInput}
-                    onChange={handleChange}
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Add a tag..."
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm transition-all duration-200"

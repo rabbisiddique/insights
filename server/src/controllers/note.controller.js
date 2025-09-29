@@ -36,7 +36,6 @@ const updateUserNote = async (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-  next();
   const { noteId } = req.params;
   const userId = req.userId;
   const updatedNoteData = {};
@@ -54,7 +53,7 @@ const updateUserNote = async (req, res, next) => {
     if (tags !== undefined) updatedNoteData.tags = tags;
     if (isArchived !== undefined) updatedNoteData.isArchived = isArchived;
 
-    const updatedNote = await noteModel.findByIdAndUpdate(
+    const updatedNote = await noteModel.findOneAndUpdate(
       { _id: noteId, user: userId },
       updatedNoteData,
       { new: true }
@@ -72,13 +71,15 @@ const updateUserNote = async (req, res, next) => {
 
 const getSingleUserNote = async (req, res, next) => {
   const userId = req.userId;
-  const { id } = req.params;
+  const { noteId } = req.params;
+  console.log(noteId);
+
   try {
     const user = await authModal.findById(userId);
     if (!user) {
       return AppError(res, "User not found", 404);
     }
-    const getNote = await noteModel.findOne({ _id: id, user: userId });
+    const getNote = await noteModel.findOne({ _id: noteId, user: userId });
     if (!getNote) {
       return AppError(res, "note not found");
     }
@@ -98,13 +99,15 @@ const getAllUserNote = async (req, res, next) => {
     if (!user) {
       return AppError(res, "User not found", 404);
     }
-    const getNote = await noteModel.find({ user: userId });
+    const getNote = await noteModel
+      .find({ user: userId })
+      .sort({ createdAt: -1 });
     if (!getNote) {
       return AppError(res, "note not found");
     }
     return res.status(200).json({
       message: `note found successfully. ${getNote.length}`,
-      getNote,
+      notes: getNote,
     });
   } catch (error) {
     next(error);
@@ -156,46 +159,49 @@ const filterNotes = async (req, res, next) => {
   try {
     const userId = req.userId;
     const { title, tags } = req.body || {};
-    const { page = 1, limit = 10 } = req.query; // pagination optional in query
+    const { page = 1, limit = 6 } = req.query;
 
-    // Check user exists
     const user = await authModal.findById(userId);
     if (!user) return AppError(res, "User not found", 404);
 
-    // Build search conditions
+    const conditions = { user: userId };
     const orConditions = [];
+
     if (title) orConditions.push({ title: { $regex: title, $options: "i" } });
-    if (tags) orConditions.push({ tags: { $in: tags } });
+    if (tags?.length) orConditions.push({ tags: { $in: tags } });
 
-    if (orConditions.length === 0)
-      return res
-        .status(400)
-        .json({ message: "Please provide title or tags to search" });
+    if (orConditions.length) conditions.$or = orConditions;
 
-    // Pagination and sorting
-    const pageNumber = parseInt(page) || 1;
-    const limitNumber = parseInt(limit) || 10;
-    const skip = (pageNumber - 1) * limitNumber;
+    const options = {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      sort: { createdAt: -1 },
+    };
 
-    const notes = await noteModel
-      .find({ user: userId, $or: orConditions })
-      .sort({ createdAt: -1 }) // newest sorting
-      .skip(skip)
-      .limit(limitNumber);
+    const result = await noteModel.paginate(conditions, options);
 
-    if (!notes || notes.length === 0) {
-      Error(res, "Note not found", 400);
-    }
-
-    res.status(200).json({
-      message: "Notes found",
-      page: pageNumber,
-      limit: limitNumber,
-      total: notes.length,
-      notes,
-    });
+    return res.status(200).json(result); // ⬅️ return the whole paginate object
   } catch (error) {
     next(error);
+  }
+};
+
+const archiveNote = async (req, res, next) => {
+  try {
+    const noteId = req.params.id;
+    const note = await noteModel.findById(noteId);
+
+    if (!note) return res.status(404).json({ message: "Note not found" });
+
+    // toggle archive status
+    note.isArchived = !note.isArchived;
+    await note.save();
+
+    res
+      .status(200)
+      .json({ message: note.isArchived ? "Archived" : "Unarchived", note });
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -207,4 +213,5 @@ module.exports = {
   deleteUserNote,
   deleteAllUserNote,
   filterNotes,
+  archiveNote,
 };

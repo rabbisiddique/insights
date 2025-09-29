@@ -3,6 +3,7 @@ import { ArrowRight, Eye, EyeOff, Mail } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
+import Loader from "../components/Loader";
 import { useGetUserQuery, useSignInMutation } from "../features/auth/authAPI";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { useGoogle } from "../hooks/useGoogle";
@@ -336,8 +337,7 @@ export default function LoginPage() {
                     <span className="flex justify-center items-center gap-2">
                       {isLoading ? (
                         <>
-                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                          Signing...
+                          <Loader text="Signing..." />
                         </>
                       ) : (
                         "Sign In"

@@ -7,7 +7,11 @@ const jwt = require("jsonwebtoken");
 const verifyToken = async (req, res, next) => {
   const token = req.cookies.token;
   if (!token) {
-    return AppError(res, "Unauthorized - Please login!", 401);
+    return AppError(
+      res,
+      "Unauthorized - may be your token has been expired! Please log in again.",
+      401
+    );
   }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

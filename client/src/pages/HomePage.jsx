@@ -1,11 +1,14 @@
+import { format } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Archive,
   BookOpen,
   BookOpenCheck,
   Bot,
+  CalendarDays,
   ChevronDown,
-  Clock,
+  Download,
+  FileKey,
   Frown,
   Heart,
   Lock,
@@ -15,66 +18,44 @@ import {
   Smile,
   Sparkles,
   Tag,
-  Trash,
   TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import ReactPaginate from "react-paginate";
+import { useNavigate, useParams } from "react-router-dom";
+import Dialog from "../components/Dialog";
+import { useGetFilteredNotesQuery } from "../features/notes/notesAPI";
+import { useArchive } from "../hooks/useArchive";
+
 export default function HomePage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("All Notes");
-  const [searchQuery, setSearchQuery] = useState("");
+  // const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("Created Date");
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("Created Date");
+  const [page, setPage] = useState(1);
+  const { searchQuery: searchParam } = useParams();
+  const searchQuery = searchParam ? decodeURIComponent(searchParam) : "";
+
+  const { data: filteredData } = useGetFilteredNotesQuery({
+    title: searchQuery,
+    tags: searchQuery, // whatever tags array you have
+    page,
+    limit: 6,
+  });
+  const { handleArchive } = useArchive();
+
+  const handleSearchInput = (e) => {
+    const value = e.target.value;
+
+    // Encode spaces and special characters
+    navigate(value ? `/home/${encodeURIComponent(value)}` : "/home");
+
+    setPage(1); // reset to first page when searching
+  };
 
   const options = ["Created Date", "Title", "Modified Date"];
-
-  const notes = [
-    {
-      id: 1,
-      title: "werfsdaf (AI improved)",
-      content: "dsafdfsaf (AI improved)",
-      emoji: "😔",
-      mood: "Sad",
-      privacy: "Private",
-      date: "Sep 15, 2025, 03:35 PM",
-      tags: [],
-    },
-    {
-      id: 2,
-      title: "My First Journal Entry",
-      content:
-        "Today was an amazing day! I started working on my new project and felt really motivated. The weather was perfect and I went for a walk...",
-      emoji: "😊",
-      mood: "Happy",
-      privacy: "Private",
-      date: "Jan 15, 2024, 04:30 PM",
-      tags: ["journal", "project", "motivation"],
-    },
-    {
-      id: 3,
-      title: "Difficult Day",
-      content:
-        "Had some challenges at work today. The deadline is approaching and I feel overwhelmed with the amount of work left.",
-      emoji: "😔",
-      mood: "Sad",
-      privacy: "Private",
-      date: "Jan 14, 2024, 12:45 AM",
-      tags: ["work", "stress", "challenges"],
-    },
-    {
-      id: 4,
-      title: "very happy",
-      content:
-        "Had some challenges at work today. The deadline is approaching and I feel overwhelmed with the amount of work left.",
-      emoji: "😀",
-      mood: "over the moon",
-      privacy: "Private",
-      date: "Jan 14, 2024, 12:45 AM",
-      tags: ["work", "stress", "challenges"],
-    },
-  ];
 
   const getMoodIcon = (mood) => {
     switch (mood.toLowerCase()) {
@@ -105,23 +86,56 @@ export default function HomePage() {
         return "bg-gradient-to-r from-slate-100 to-gray-100 text-slate-800 border-slate-200";
     }
   };
+  const handlePageChange = (selectedItem) => {
+    setPage(selectedItem.selected + 1); // react-paginate is 0-based
+  };
+
+  const pageCount = filteredData?.totalPages || 0;
 
   const tabs = ["All Notes", "Public", "Private", "Archived"];
 
-  const filteredNotes = notes.filter((note) => {
-    const matchesSearch =
-      note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      note.content.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredNotes = (filteredData?.docs || []).filter((note) => {
+    const search = searchQuery.toLowerCase();
+    const matchesTitle = note.title.toLowerCase().includes(search);
+    const matchesContent = note.content.toLowerCase().includes(search);
+    const matchesTags = note.tags.some((tag) =>
+      tag.toLowerCase().includes(search)
+    );
 
-    if (activeTab === "All Notes") return matchesSearch;
+    if (activeTab === "All Notes")
+      return (
+        (matchesTitle || matchesContent || matchesTags) && !note.isArchived
+      );
     if (activeTab === "Private")
-      return matchesSearch && note.privacy === "Private";
+      return (
+        (matchesTitle || matchesContent || matchesTags) &&
+        !note.isPublic &&
+        !note.isArchived
+      );
     if (activeTab === "Public")
-      return matchesSearch && note.privacy === "Public";
-    if (activeTab === "Archived") return false;
+      return (
+        (matchesTitle || matchesContent || matchesTags) &&
+        note.isPublic &&
+        !note.isArchived
+      );
+    if (activeTab === "Archived") return note.isArchived;
 
-    return matchesSearch;
+    return matchesTitle || matchesContent || matchesTags;
   });
+
+  // Then sort
+  const sortedNotes = [...filteredNotes].sort((a, b) => {
+    if (sortBy === "Created Date")
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    if (sortBy === "Modified Date")
+      return new Date(b.updatedAt) - new Date(a.updatedAt);
+    if (sortBy === "Title") return a.title.localeCompare(b.title);
+    return 0;
+  });
+
+  const formattedDate = (date) => {
+    return format(new Date(date), "MMM dd, yyy");
+  };
 
   return (
     <>
@@ -194,7 +208,7 @@ export default function HomePage() {
                 className="dark:bg-[#00000000] w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg bg-white 
                      focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchInput}
               />
             </div>
 
@@ -235,6 +249,7 @@ export default function HomePage() {
                             backgroundColor: "rgba(139,92,246,0.1)",
                           }}
                           onClick={() => {
+                            setSortBy(opt);
                             setSelected(opt);
                             setOpen(false);
                           }}
@@ -249,21 +264,6 @@ export default function HomePage() {
               </div>
 
               {/* Action button */}
-              <button className="p-3 border dark:bg-[#00000000] dark:border-[#333] border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors">
-                <svg
-                  className="w-4 h-4 text-gray-600 dark:text-[#fff]"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
-                  />
-                </svg>
-              </button>
             </div>
           </motion.div>
 
@@ -294,7 +294,7 @@ export default function HomePage() {
           </motion.div>
 
           <AnimatePresence mode="wait">
-            {filteredNotes.length > 0 ? (
+            {sortedNotes.length > 0 ? (
               <motion.div
                 key={activeTab}
                 className=" grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 "
@@ -303,9 +303,9 @@ export default function HomePage() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
               >
-                {filteredNotes.map((note, index) => (
+                {sortedNotes.map((note, index) => (
                   <motion.div
-                    key={note.id}
+                    key={note._id}
                     className="group relative bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-all duration-300 cursor-pointer"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -332,8 +332,14 @@ export default function HomePage() {
                         {note.mood}
                       </span>
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
-                        <Lock className="w-3.5 h-3.5" />
-                        {note.privacy}
+                        <span>
+                          {!note.isPublic ? (
+                            <Lock className="w-3.5 h-3.5" />
+                          ) : (
+                            <FileKey className="w-3.5 h-3.5" />
+                          )}
+                        </span>
+                        {note.isPublic}
                       </span>
                     </div>
 
@@ -359,8 +365,8 @@ export default function HomePage() {
 
                     {/* Date */}
                     <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-3">
-                      <Clock className="w-4 h-4 mr-2" />
-                      {note.date}
+                      <CalendarDays className="w-4 h-4 mr-2" />
+                      {formattedDate(note?.createdAt)}
                     </div>
 
                     {/* Action buttons with smooth slide/fade */}
@@ -372,30 +378,75 @@ export default function HomePage() {
                       <div className="flex items-center">
                         <button
                           className="flex cursor-pointer   justify-center items-center gap-1 px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-all duration-200"
-                          onClick={() => navigate(`/notes/${note.id}`)}
+                          onClick={() => navigate(`/notes/${note._id}`)}
                         >
-                          <Pencil size={15} />
+                          <div className="tooltip" data-tip="Edit">
+                            <Pencil size={15} />
+                          </div>
                         </button>
                         <button
                           className="flex justify-center cursor-pointer items-center gap-1 px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-all duration-200"
-                          onClick={() => navigate(`/chat/${note.id}`)}
+                          onClick={() => navigate(`/chat/${note._id}`)}
                         >
-                          <Bot size={15} />
+                          <div className="tooltip" data-tip="Chat">
+                            <Bot size={15} />
+                          </div>
+                        </button>
+                        <button
+                          className="flex justify-center cursor-pointer items-center gap-1 px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-all duration-200"
+                          onClick={() => {
+                            const noteText = `
+                              Title: ${note.title}
+                              Content: ${note.content}
+                              Tags: ${note.tags.join(", ")}
+                              Mood: ${note.mood}
+                              Privacy: ${note.isPublic ? "Public" : "Private"}
+                              Created At: ${new Date(
+                                note.createdAt
+                              ).toLocaleString()}
+                              Updated At: ${new Date(
+                                note.updatedAt
+                              ).toLocaleString()}
+                                  `;
+
+                            const blob = new Blob([noteText], {
+                              type: "text/plain",
+                            });
+                            const url = URL.createObjectURL(blob);
+
+                            const link = document.createElement("a");
+                            link.href = url;
+                            link.download = `${note.title.replace(
+                              /\s+/g,
+                              "_"
+                            )}.txt`; // plain text file
+                            link.click();
+                            URL.revokeObjectURL(url); // clean up
+                          }}
+                        >
+                          <div className="tooltip" data-tip="download note">
+                            <Download className="w-4 h-4" />
+                          </div>
                         </button>
                       </div>
 
                       <div className="flex items-center justify-center gap-2">
-                        <span className="p-2 rounded-md text-gray-500 dark:text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-600 transition-all duration-200 cursor-pointer">
-                          <Trash className="w-5 h-5" />
-                        </span>
-                        <span className="p-2 rounded-md text-gray-500 dark:text-gray-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-600 transition-all duration-200 cursor-pointer">
-                          <Archive className="w-5 h-5" />
-                        </span>
                         <span
-                          className="p-2 rounded-md text-gray-500 dark:text-gray-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-600 transition-all duration-200 cursor-pointer"
-                          onClick={() => navigate(`/read/${note.id}`)}
+                          className="tooltip p-2 rounded-md text-gray-500 dark:text-gray-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-600 transition-all duration-200 cursor-pointer"
+                          onClick={() => navigate(`/read/${note._id}`)}
+                          data-tip="Read"
                         >
                           <BookOpenCheck size={15} />
+                        </span>
+                        <span
+                          className="tooltip p-2 rounded-md text-gray-500 dark:text-gray-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-600 transition-all duration-200 cursor-pointer"
+                          data-tip={note.isArchived ? "Unarchive" : "Archive"}
+                          onClick={() => handleArchive(note._id, note)}
+                        >
+                          <Archive className="w-5 h-5" />
+                        </span>
+                        <span>
+                          <Dialog deleteId={note._id} />
                         </span>
                       </div>
                     </motion.div>
@@ -435,6 +486,59 @@ export default function HomePage() {
               </motion.div>
             )}
           </AnimatePresence>
+          {pageCount > 1 && (
+            <ReactPaginate
+              breakLabel={
+                <span className="px-3 py-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200">
+                  ...
+                </span>
+              }
+              nextLabel={
+                <div className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-md hover:scale-102 transition-all duration-200">
+                  <span>Next</span>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </div>
+              }
+              previousLabel={
+                <div className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-md hover:scale-102 transition-all duration-200">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                  <span>Previous</span>
+                </div>
+              }
+              onPageChange={handlePageChange}
+              pageRangeDisplayed={5}
+              pageCount={pageCount}
+              containerClassName="flex flex-wrap items-center justify-center gap-2 mt-6"
+              pageLinkClassName="flex items-center justify-center w-12 h-12 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-md hover:scale-102 transition-all duration-200"
+              activeLinkClassName="!bg-gradient-to-r !from-blue-500 !to-purple-600 !text-white !border-transparent !shadow-lg !scale-105 hover:!shadow-xl"
+              disabledClassName="opacity-50 cursor-not-allowed"
+              breakLinkClassName="flex items-center justify-center w-12 h-12 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200"
+            />
+          )}
         </div>
       </div>
     </>

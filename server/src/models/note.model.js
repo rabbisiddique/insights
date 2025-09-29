@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+const mongoosePaginate = require("mongoose-paginate-v2");
+
 const noteSchema = new mongoose.Schema(
   {
     title: {
@@ -39,6 +41,8 @@ const noteSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+noteSchema.plugin(mongoosePaginate);
 
 const noteModel = mongoose.model("note", noteSchema);
 

@@ -118,7 +118,7 @@ const AppWrapper = () => {
 
           {/* Protected routes */}
           <Route
-            path="/home"
+            path="/home/:searchQuery?"
             element={
               <ProtectedRoute>
                 <HomePage />
@@ -165,6 +165,7 @@ const AppWrapper = () => {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/read/:noteId"
             element={
@@ -176,7 +177,7 @@ const AppWrapper = () => {
 
           {/* Fallback */}
           <Route
-            path="/*"
+            path="*"
             element={
               <div className="bg-red-800 text-center">Not Found 404</div>
             }

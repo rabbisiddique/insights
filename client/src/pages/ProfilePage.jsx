@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
 import { useGetUserQuery } from "../features/auth/authAPI";
 import { useUpdateProfileMutation } from "../features/profile/profileAPI";
 import { useAuth } from "../hooks/useAuth";
@@ -28,7 +27,6 @@ import { showApiErrors } from "../utils/ShowApiError";
 import VerifyYourEmail from "./VerifyYourEmail";
 
 export default function ProfilePage() {
-  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
