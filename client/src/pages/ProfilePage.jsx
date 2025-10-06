@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import {
+  ArchiveIcon,
   BadgeAlert,
   Calendar,
   Camera,
@@ -21,6 +22,7 @@ import {
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useGetUserQuery } from "../features/auth/authAPI";
+import { useNotesCountQuery } from "../features/notes/notesAPI";
 import { useUpdateProfileMutation } from "../features/profile/profileAPI";
 import { useAuth } from "../hooks/useAuth";
 import { showApiErrors } from "../utils/ShowApiError";
@@ -35,6 +37,8 @@ export default function ProfilePage() {
 
   const [updateProfile, { isLoading: updateLoading, isError }] =
     useUpdateProfileMutation();
+  const { data } = useNotesCountQuery();
+  console.log(data);
 
   const [profileData, setProfileData] = useState({
     username: "",
@@ -42,16 +46,6 @@ export default function ProfilePage() {
     currentPassword: "",
     newPassword: "",
   });
-  const [userStats] = useState({
-    totalNotes: 24,
-    publicNotes: 8,
-    privateNotes: 16,
-    joinedDate: "January 2024",
-    streak: 12,
-    achievements: 5,
-    totalViews: 1247,
-  });
-  console.log(user);
 
   useEffect(() => {
     if (user) {
@@ -239,7 +233,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <span className="text-2xl font-bold text-blue-600 dark:text-blue-400 max-xs:text-lg">
-                      {userStats.totalNotes}
+                      {data?.total}
                     </span>
                   </motion.div>
 
@@ -261,7 +255,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      {userStats.publicNotes}
+                      {data?.publicNotes}
                     </span>
                   </motion.div>
 
@@ -283,7 +277,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <span className="text-2xl font-bold text-gray-600 dark:text-gray-400">
-                      {userStats.privateNotes}
+                      {data?.privateNotes}
                     </span>
                   </motion.div>
 
@@ -293,19 +287,19 @@ export default function ProfilePage() {
                   >
                     <div className="flex items-center space-x-3">
                       <div className="p-3 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl shadow-lg">
-                        <Eye className="w-5 h-5 text-white" />
+                        <ArchiveIcon className="w-5 h-5 text-white" />
                       </div>
                       <div>
                         <span className="text-gray-700 dark:text-gray-300 font-medium">
-                          Total Views
+                          Archive Notes
                         </span>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Content engagement
+                          hidden notes
                         </p>
                       </div>
                     </div>
                     <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                      {userStats.totalViews}
+                      {data?.archiveNotes}
                     </span>
                   </motion.div>
 
@@ -346,6 +340,8 @@ export default function ProfilePage() {
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
+                    Total
+                    Views
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setIsEditing(!isEditing)}
                     className="flex items-center cursor-pointer space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl shadow-lg transition-all duration-300"

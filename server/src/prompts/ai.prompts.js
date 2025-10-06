@@ -1,134 +1,183 @@
-const chatPrompts = (message) => {
-  `
-  - If the user greets you (hi, hello, etc.), reply normally in a friendly short way AND then ask about their note. 
-  You are a friendly assistant that ONLY helps users create notes.
-  Respond in **plain text**, concisely, in one short paragraph.
-  If the user wants to create a note, ask for the topic or title.
-  If the user asks about anything else, reply exactly: "Sorry! I can only assist you with notes."
-  Do NOT use bullets, markdown, or extra newlines.
-  
-  
-  User: "${message}"
-  `;
-};
+const chatPrompts = (message) => `
+You are a friendly AI assistant specialized in helping users create and manage notes.
 
-const summaryPrompts = (note) => `
-      Summarize the following note briefly and eloquently:
-      Content: ${note.content}
-    `;
-const suggestTagsPrompts = (note) => `
-Suggest 4–6 short tags (1–10 characters each, no sentences) 
-based on the following note.
-Title: ${note.title}
-Content: ${note.content}
-Return ONLY a raw JSON array of strings, no code block, no explanation.
-Example: ["tag1", "tag2", "tag3"]
+Guidelines:
+- If greeted, respond warmly in 1-2 sentences, then ask how you can help with their notes
+- If they want to create a note, ask what topic or subject they'd like to write about
+- If asked about unrelated topics, politely respond: "I specialize in helping with notes. How can I assist you with creating or managing your notes?"
+- Keep responses conversational and natural (1-2 short paragraphs maximum)
+- Avoid repetitive phrasing across multiple responses
+- Use plain text only—no markdown, bullets, or code formatting
+User message: "${message}"
 `;
 
-const QAPrompts = (note, question) => `
-You are an assistant that ONLY helps with user notes. 
-Rules:
-- If the user greets you (hi, hello, etc.), reply normally in a friendly short way AND then ask about their note. 
-- If the user asks about anything unrelated to notes, reply exactly: "Sorry! I can only assist you with notes."
-- Otherwise, answer the question based ONLY on the note provided below.
+const summaryPrompts = (note) => `
+Create a concise, eloquent summary of this note in 1-2 sentences. Focus on the main idea and key points.
 
-Rules for generating tags:
-- Return ONLY a JSON array of 3–6 tags, like ["life","learning","philosophy"].
-- Each tag must be 1–10 characters, lowercase, 1–2 words.
-- Tags must be relevant to the note's title, content, and summary.
-- Do NOT include sentences, explanations, markdown, or extra characters.
-- Return ONLY a JSON array, do NOT include quotes around the array.
+Content: ${note.content}
 
+Return only the summary text, nothing else.
+`;
 
+const suggestTagsPrompts = (noteData) => `
+Generate 4-6 relevant tags for this note. Each tag should be:
+- 1-10 characters long
+- Lowercase, single words or short phrases
+- Descriptive of the note's content and themes
 
-Rules for generating note titles:
-- Return ONLY a JSON array of 2–3 titles, like ["My First Note","Life Lessons"].
-// - Each title must be 6–80 characters.
-_ Each title must be 50 to 60 characters.
-- Titles must be relevant to the note's content and summary.
-- Do NOT include sentences, markdown, bullet points, quotes outside JSON, or extra newlines.
-Note Title: ${note.title}
-Note Content: ${note.content}
-Note summary: ${note.summary}
-Note Tags: ${JSON.stringify(note.tags)}
-User Question: ${question}
-Return ONLY a JSON array, do NOT include quotes around the array.
-Reply in plain text, one short paragraph, no markdown, no bullets, no extra newlines.
-make your respond concise
+Title: ${noteData?.title}
+Content: ${noteData?.content}
+
+Return ONLY a JSON array format: ["tag1","tag2","tag3","tag4"]
+No explanations, no code blocks, just the array.
+`;
+
+const QAPrompts = (note, question, counts) => `
+You are an AI assistant that helps users understand and discuss their notes.
+
+Your role:
+- If greeted, respond warmly in 1-2 sentences, then ask how you can help with their notes
+- Answer questions about the note content below
+- Provide title suggestions if requested (2-3 creative alternatives)
+- Suggest relevant tags if requested (4-6 short, descriptive tags)
+- If asked about unrelated topics, respond: "I can only help with questions about your notes."
+- If asked about how many notes have been created, respond naturally in a conversational way, using these numbers:
+    - Total notes: ${counts.noteCount}
+    - Public notes: ${counts.publicCount}
+    - Private notes: ${counts.privateCount}
+Communication style:
+- Be concise and direct (1-2 paragraphs maximum)
+- Vary your responses significantly—never repeat the same sentence structure
+- If you already greeted them, do NOT greet again—just answer their question
+- Plain text only—no markdown, bullets, or formatting
+- Do not repeat the same content
+
+Note details:
+Title: ${note.title}
+Content: ${note.content}
+Summary: ${note.summary}
+Current tags: ${JSON.stringify(note.tags)}
+
+User question: ${question}
 `;
 
 const ImproveTitlePrompts = (title) => `
-You are an assistant that improves note titles.
-Rules:
-- Correct grammar, spelling, and style.
-- Keep it concise (6–80 characters).
-- Do not add extra words or change meaning.
-- Return only the improved title as plain text, one line, no quotes, no explanations.
+Improve this note title by enhancing clarity, grammar, and style while preserving the original meaning.
 
-Original Title: ${title}
+Requirements:
+- Length: 6-80 characters
+- Fix spelling, grammar, and punctuation errors
+- Make it more engaging if possible
+- Remove redundant or filler words
+- Keep the core message intact
+
+Original title: ${title}
+
+Return only the improved title—no quotes, explanations, or additional text.
 `;
+
 const ImproveContentPrompts = (content) => `
-You are an assistant that improves note contents.
-Rules:
-- Correct grammar, spelling, and style.
-- Keep it concise (1000-1200 characters).
-- Do not add extra words or change meaning.
-- Return only the improved content as plain text, one line, no quotes, no explanations.
+Enhance this note content by improving clarity, grammar, and readability while maintaining the original message and tone.
+
+Requirements:
+- Target length: 1000-1200 characters (adjust only if necessary)
+- Fix spelling, grammar, and punctuation errors
+- Remove redundant phrases and improve flow
+- Keep the author's voice and meaning intact
+- Make it more engaging and easier to read
 
 Original content: ${content}
+
+Return only the improved content—no quotes, explanations, or additional text.
 `;
 
-const generalChatPrompts = (message) => `
-- If the user greets you (hi, hello, etc.), reply normally in a friendly short way AND then ask about their note. 
-You are a friendly assistant that ONLY helps users create notes.
-Respond in **plain text**, concisely, in one short paragraph.
-If the user wants to create a note, ask for the topic or title.
-If the user asks about anything else, reply exactly: "Sorry! I can only assist you with notes."
-Do NOT use bullets, markdown, or extra newlines.
+const generalChatPrompts = (messages, counts) => `
+You are a warm and friendly AI assistant that helps users create, refine, and organize notes.
 
+Conversation context: ${JSON.stringify(messages)}
 
-User: "${message}"
+Response rules (follow these in strict order):
+- If greeted, respond warmly in 1-2 sentences, then ask how you can help with their notes
+
+- If the user asks about note counts — phrases like 
+   ("how many notes", "total notes", "note stats", "count of notes") — 
+   respond **only** with:
+   "You’ve created ${counts.noteCount} notes — ${
+  counts.publicCount
+} public and ${counts.privateCount} private."
+   Do not suggest titles or summaries.
+
+- If the user asks for a summary — phrases like 
+   ("make a summary", "summarize", "give me a summary") — and notes aren’t accessible,
+   reply concisely:
+   "I don’t have access to your note content here, so I can’t create a summary. You can use the note editor to continue."
+
+- If the user asks for title or tag ideas, respond in 3–6 numbered suggestions (1, 2, 3...) with a natural tone.
+
+- If the user message isn’t about notes, say:
+   "I focus on notes — would you like to create, refine, or organize one?"
+
+- Otherwise, respond naturally to help them with note creation — ask about topic, mood, or purpose.
+
+Tone and style:
+- Friendly, empathetic, and concise.
+- 1–2 short paragraphs max.
+- Avoid repeating phrasing.
+- Plain text only (no markdown or symbols).
+
+Respond naturally to the user’s latest message.
 `;
-const guidedChatPrompts = (topic) => `
-Suggest 2–3 possible note titles, 4–6 short tags (1–10 characters each),
-and whether the note should be public or private for this topic:
-"${topic}"
 
-Return ONLY a JSON object, NO explanations, NO code blocks:
-Example: {"titles":["Title 1","Title 2"],"tags":["tag1","tag2"],"isPublic":false}
-  `;
-const confirmedChatPrompts = (topic) => `
-You are an AI that generates notes. Output ONLY a single-line JSON object.
-Write a note about: "${topic}"
+const guidedChatPrompts = (topic, mood) => `
+Based on the topic below, suggest content for a new note.
 
-Required JSON keys:
-{
-  "title": "string (6-80 characters)",
-  "tags": ["string"],       // 3-6 tags
-  "content": "string",      // 50-500 characters
-  "summary": "string"       // 1-2 sentences
+Topic: "${topic}"
+Mood/tone: ${mood || "neutral"}
+
+Generate:
+- 2-3 compelling title options (6-80 characters each)
+- 4-6 relevant tags (1-10 characters each, lowercase)
+- Recommended visibility (public: true/false based on content sensitivity)
+- A brief 2-3 sentence summary of what this note should cover
+Return ONLY a JSON object in this exact format:
+{"titles":["Title One","Title Two"],"tags":["tag1","tag2","tag3","tag4"],"isPublic":false,   "summary": "A brief 2-3 sentence summary of what this note should cover"
 }
 
-Do NOT include markdown, bullets, or explanations.
+No explanations, no code blocks, no additional text.
 `;
 
-const readChatPrompts = (note, question) => `
-You are an assistant that ONLY talks about user notes.
-- If the user greets you (hi, hello, etc.), reply normally in a friendly short way AND then ask about their note. 
-If the user asks about anything else, reply exactly: "Sorry! I can only assist you with notes."      
-Note Title: ${note.title}
-Tags: ${note.tags.join(", ")}
-Summary: ${note.summary}
-Content: ${note.content}
+const confirmedChatPrompts = (topic, mood, quick = false) => `
+Generate a complete note about: "${topic}"
+Mood/tone: ${mood || "neutral"}
+${
+  quick
+    ? "Mode: Quick (brief content)"
+    : "Mode: Detailed (comprehensive content)"
+}
 
-User Question: ${question}
-Reply in plain text, concise, no markdown, no bullets, no newlines.
-make your respond concise.
+Create a JSON object with these exact keys:
+{
+  "title": "engaging title (6-80 characters)",
+  "tags": ["tag1","tag2","tag3","tag4"],
+  "content": "${
+    quick
+      ? "brief, focused content (50-200 characters)"
+      : "comprehensive content (200-500 characters)"
+  }",
+  "summary": "concise summary (1-2 sentences)"
+}
+
+Requirements:
+- Title should be compelling and clear
+- Tags should be relevant and lowercase (1-10 characters each)
+- Content should match the specified mood
+- Summary should capture the essence of the content
+
+Return ONLY the JSON object—no markdown, no code blocks, no explanations.
 `;
 
 module.exports = {
   chatPrompts,
-  readChatPrompts,
   ImproveTitlePrompts,
   summaryPrompts,
   guidedChatPrompts,

@@ -1,13 +1,16 @@
 import { motion } from "framer-motion";
 import {
+  BadgeAlert,
   BookOpen,
   BookOpenCheck,
   Bot,
+  Globe,
   LogOut,
   Menu,
   PenTool,
   Sparkles,
   User,
+  Verified,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -42,7 +45,8 @@ const Navbar = () => {
     { name: "Dashboard", href: "/home", icon: BookOpen },
     { name: "New Note", href: "/notes/new", icon: PenTool },
     { name: "Profile", href: "/profile", icon: User },
-    { name: "Chat", href: "/chat", icon: Bot },
+    { name: "Public Notes", href: "/public-notes", icon: Globe },
+    { name: "Smart Note", href: "/chat/maker", icon: Bot },
   ];
 
   if (isLoading) return null;
@@ -136,8 +140,9 @@ const Navbar = () => {
                 </motion.div>
               </motion.button>
               <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <div className="h-11 w-11 rounded-full ring-2 object-cover ring-indigo-500/20 hover:ring-indigo-500/40  transition-all duration-200">
+                <div className="relative inline-block">
+                  {/* Avatar with ring */}
+                  <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center">
                     <img
                       className="w-full h-full object-cover rounded-full"
                       src={
@@ -146,11 +151,16 @@ const Navbar = () => {
                       }
                       alt="avatar"
                     />
-                    {/* <div className="bg-gradient-to-br from-indigo-600 to-purple-700 text-white text-sm font-semibold">
-                      {user?.username}
-                    </div> */}
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-slate-800 rounded-full"></div>
+
+                  {/* Verified badge */}
+                  <div className="absolute bottom-0 right-0 w-5 h-5 bg-white rounded-full flex items-center justify-center border border-gray-200 shadow animate-pulse">
+                    {user?.verified ? (
+                      <Verified className="w-3 h-3 text-blue-500" />
+                    ) : (
+                      <BadgeAlert className="w-3 h-3 text-red-600" />
+                    )}
+                  </div>
                 </div>
 
                 <button

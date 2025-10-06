@@ -16,17 +16,6 @@ const noteSchemaValidation = checkSchema({
     notEmpty: {
       errorMessage: "Content is required",
     },
-    isLength: {
-      options: { min: 50, max: 1200 },
-      errorMessage: "Content must be between 50 and 1200 characters",
-    },
-  },
-  tags: {
-    in: ["body"],
-    isArray: {
-      options: { min: 1, max: 10 },
-      errorMessage: "Tags must be between 1 and 10",
-    },
   },
 });
 

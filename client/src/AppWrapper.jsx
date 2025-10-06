@@ -2,7 +2,13 @@ import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
-import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./hooks/useAuth";
@@ -13,7 +19,9 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import NoteReadPage from "./pages/NoteReadPage";
 import NotesDashboard from "./pages/NotesDashboard";
+import NotFoundPage from "./pages/NotFoundPage";
 import ProfilePage from "./pages/ProfilePage";
+import PublicPage from "./pages/PublicPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SignUpPage from "./pages/SignUpPage";
 import VerifyYourEmail from "./pages/VerifyYourEmail";
@@ -22,11 +30,12 @@ const AppWrapper = () => {
   const navigate = useNavigate();
 
   const { isAuthenticated, isLoading } = useAuth();
-  const hideNavbarPaths = ["/", "/login", "/sign-up", "/forgot-password"];
+  const hideNavbar = ["/", "/login", "/sign-up", "/forgot-password", "/404"];
+
   const showNavbar =
-    !hideNavbarPaths.includes(location.pathname) &&
+    !hideNavbar.includes(location.pathname) &&
     !location.pathname.startsWith("/reset-password/");
-  // For route changes
+
   useEffect(() => {
     NProgress.start();
     NProgress.done();
@@ -115,13 +124,28 @@ const AppWrapper = () => {
             path="/reset-password/:token"
             element={<ResetPasswordPage />}
           />
-
           {/* Protected routes */}
           <Route
             path="/home/:searchQuery?"
             element={
               <ProtectedRoute>
                 <HomePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/public-notes"
+            element={
+              <ProtectedRoute>
+                <PublicPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/public-notes/:searchQuery"
+            element={
+              <ProtectedRoute>
+                <PublicPage />
               </ProtectedRoute>
             }
           />
@@ -150,7 +174,7 @@ const AppWrapper = () => {
             }
           />
           <Route
-            path="/chat"
+            path="/chat/maker"
             element={
               <ProtectedRoute>
                 <ChatWithAI />
@@ -165,7 +189,6 @@ const AppWrapper = () => {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/read/:noteId"
             element={
@@ -174,14 +197,10 @@ const AppWrapper = () => {
               </ProtectedRoute>
             }
           />
-
           {/* Fallback */}
-          <Route
-            path="*"
-            element={
-              <div className="bg-red-800 text-center">Not Found 404</div>
-            }
-          />
+          <Route path="/404" element={<NotFoundPage />} />
+          {/* Catch-all route for unmatched paths, redirecting to /404 */}
+          <Route path="*" element={<Navigate to="/404" replace />} />{" "}
         </Routes>
       </div>
     </>

@@ -21,6 +21,7 @@ const aiSchema = new mongoose.Schema(
         "improve-writing",
         "suggestions",
         "create-note",
+        "chat",
       ],
       required: true,
     },

@@ -21,13 +21,11 @@ const noteSchema = new mongoose.Schema(
       ref: "user",
       required: true,
     },
+
     mood: {
       type: String,
-      mood: {
-        type: String,
-        enum: ["happy", "over the moon", "sad", "heartbreaking"],
-        default: "happy",
-      },
+      enum: ["happy", "over the moon", "sad", "heartbreaking", "angry"],
+      default: "happy",
     },
     isPublic: {
       type: Boolean,

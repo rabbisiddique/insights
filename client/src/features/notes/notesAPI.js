@@ -13,10 +13,10 @@ export const noteApi = createApi({
   tagTypes: ["Notes"], // ✅ define once
   endpoints: (builder) => ({
     createNoteCard: builder.mutation({
-      query: (body) => ({
+      query: (payload) => ({
         url: "/create-note",
         method: "POST",
-        body,
+        body: payload,
       }),
       invalidatesTags: ["Notes"], // ✅ consistent
     }),
@@ -30,12 +30,13 @@ export const noteApi = createApi({
       invalidatesTags: ["Notes"], // ✅ ensures update triggers refresh
     }),
 
+    // notesAPI.js - Keep it simple
     getAllNote: builder.query({
       query: () => ({
         url: "/get-all-note",
         method: "GET",
       }),
-      providesTags: ["Notes"], // ✅ consistent
+      providesTags: ["Notes"], // ✅ Simple
     }),
 
     getNote: builder.query({
@@ -43,7 +44,14 @@ export const noteApi = createApi({
         url: `/get-single-note/${id}`,
         method: "GET",
       }),
-      providesTags: ["Notes"], // ✅ consistent
+      providesTags: ["Notes"],
+    }),
+    getPublicNotes: builder.query({
+      query: ({ page = 1, limit = 10 }) => ({
+        url: `/public?page=${page}&limit=${limit}`,
+        method: "GET",
+      }),
+      providesTags: ["Notes"],
     }),
 
     getFilteredNotes: builder.query({
@@ -69,6 +77,20 @@ export const noteApi = createApi({
       }),
       invalidatesTags: ["Notes"],
     }),
+    deleteAllNote: builder.mutation({
+      query: () => ({
+        url: `/delete-all-note`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Notes"],
+    }),
+    notesCount: builder.query({
+      query: () => ({
+        url: `/notes-stats`,
+        method: "GET",
+      }),
+      invalidatesTags: ["Notes"],
+    }),
   }),
 });
 
@@ -80,4 +102,7 @@ export const {
   useGetFilteredNotesQuery,
   useDeleteNoteMutation,
   useArchiveNoteMutation,
+  useNotesCountQuery,
+  useDeleteAllNoteMutation,
+  useGetPublicNotesQuery,
 } = noteApi;

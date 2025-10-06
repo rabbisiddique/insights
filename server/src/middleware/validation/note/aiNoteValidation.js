@@ -30,14 +30,14 @@ const aiNoteValidation = checkSchema({
       errorMessage: "Content must be between 50 and 2000 characters",
     },
   },
-  tags: {
-    in: ["body"],
-    optional: { options: (value, { req }) => !req.body.confirmed },
-    isArray: {
-      options: { min: 1, max: 10 },
-      errorMessage: "Tags must contain between 1 and 10 items",
-    },
-  },
+  // tags: {
+  //   in: ["body"],
+  //   optional: { options: (value, { req }) => !req.body.confirmed },
+  //   isArray: {
+  //     options: { min: 1, max: 10 },
+  //     errorMessage: "Tags must contain between 1 and 10 items",
+  //   },
+  // },
   isPublic: {
     in: ["body"],
     optional: true,

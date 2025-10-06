@@ -8,57 +8,143 @@ const {
   summaryPrompts,
   suggestTagsPrompts,
   QAPrompts,
-  ImproveWritingPrompts,
   ImproveContentPrompts,
   generalChatPrompts,
   guidedChatPrompts,
   confirmedChatPrompts,
   ImproveTitlePrompts,
-  readChatPrompts,
 } = require("../prompts/ai.prompts");
 
 const summarizeNote = async (req, res, next) => {
-  const { noteId } = req.body;
+  const { noteId, title, content } = req.body;
   const userId = req.userId;
 
   try {
-    const user = await authModal.findById(userId);
-    if (!user) return AppError(res, "User not found", 404);
+    if (!title && !content && !noteId) {
+      return AppError(res, "Title or content is required to summarize", 400);
+    }
 
-    const note = await noteModel.findOne({ _id: noteId, user: userId });
-    if (!note) return AppError(res, "Note not found", 404);
+    let note;
+    let noteData = { title, content };
 
-    const prompt = summaryPrompts(note);
-    let summary = await generateContent(prompt);
+    if (noteId) {
+      // Existing note → fetch and update it
+      note = await noteModel.findOne({ _id: noteId, user: userId });
+      if (!note) return AppError(res, "Note not found", 404);
+
+      noteData = {
+        title: title || note.title,
+        content: content || note.content,
+      };
+    }
+    // ❌ REMOVE THE ELSE BLOCK - Don't create a temporary note
+
+    // Generate summary
+    let summary = await generateContent(summaryPrompts(noteData));
     summary = cleanAIContent(summary);
-    note.summary = summary;
-    await note.save();
 
-    await aiModel.create({
-      note: note._id,
-      user: userId,
-      action: "summary",
-      answer: summary,
+    // Only save if editing existing note
+    if (noteId && note) {
+      note.summary = summary;
+      await note.save();
+
+      // Log AI action
+      await aiModel.create({
+        note: note._id,
+        user: userId,
+        action: "summary",
+        answer: summary,
+      });
+    }
+
+    // Return summary without creating a note
+    return res.status(200).json({
+      summary,
+      noteId: noteId || null, // null if new note
     });
-
-    res.status(200).json({ summary });
   } catch (err) {
     next(err);
   }
 };
 
-const suggestTags = async (req, res, next) => {
-  const { noteId } = req.body;
+const improveWriting = async (req, res, next) => {
+  const { noteId, title, content } = req.body;
   const userId = req.userId;
+
+  try {
+    let improvedTitle = title;
+    let improvedContent = content;
+    const target = [];
+
+    if (title) {
+      const titlePrompt = ImproveTitlePrompts(title);
+      improvedTitle = await generateContent(titlePrompt);
+      target.push("title");
+    }
+
+    if (content) {
+      const contentPrompt = ImproveContentPrompts(content);
+      improvedContent = await generateContent(contentPrompt);
+      target.push("content");
+    }
+
+    // If noteId is provided → update DB
+    if (noteId) {
+      const note = await noteModel.findOne({ _id: noteId, user: userId });
+      if (!note) return AppError(res, "Note not found", 404);
+
+      if (improvedTitle) note.title = improvedTitle;
+      if (improvedContent) note.content = improvedContent;
+      await note.save();
+
+      await aiModel.create({
+        note: note._id,
+        user: userId,
+        action: "improve-writing",
+        target,
+        answer: JSON.stringify({
+          title: improvedTitle,
+          content: improvedContent,
+        }),
+      });
+    }
+
+    return res.status(200).json({
+      message: "Improvement complete",
+      note: {
+        title: improvedTitle,
+        content: improvedContent,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const suggestTags = async (req, res, next) => {
+  const { noteId, title, content } = req.body;
+  const userId = req.userId;
+
   const user = await authModal.findById(userId);
   if (!user) return AppError(res, "User not found", 404);
+
   try {
-    const note = await noteModel.findOne({ _id: noteId, user: userId });
-    if (!note) return AppError(res, "Note not found", 404);
+    let noteData = null;
+
+    if (noteId) {
+      // Fetch existing note
+      const note = await noteModel.findOne({ _id: noteId, user: userId });
+      if (!note) return AppError(res, "Note not found", 404);
+      noteData = note;
+    } else if (title || content) {
+      // Use draft data
+      noteData = { title, content, tags: [] };
+    } else {
+      return AppError(res, "No note data provided", 400);
+    }
 
     // Generate AI output
-    const prompt = suggestTagsPrompts(note);
-
+    const prompt = suggestTagsPrompts(noteData);
     let aiResponse = await generateContent(prompt);
 
     aiResponse = aiResponse
@@ -76,20 +162,20 @@ const suggestTags = async (req, res, next) => {
         .filter((t) => t.length >= 1 && t.length <= 10);
     }
 
-    // Remove duplicates
     const uniqueTags = Array.from(new Set(suggestedTags));
 
-    // Merge with existing note tags
-    note.tags = Array.from(new Set([...note.tags, ...uniqueTags]));
-    await note.save();
+    // If it's an existing note → save tags + log AI history
+    if (noteId) {
+      noteData.tags = Array.from(new Set([...noteData.tags, ...uniqueTags]));
+      await noteData.save();
 
-    // Log in AI history
-    await aiModel.create({
-      note: note._id,
-      user: userId,
-      action: "tags",
-      answer: uniqueTags.length ? uniqueTags.join(", ") : "No tags generated",
-    });
+      await aiModel.create({
+        note: noteData._id,
+        user: userId,
+        action: "tags",
+        answer: uniqueTags.length ? uniqueTags.join(", ") : "No tags generated",
+      });
+    }
 
     return res.status(200).json({ suggestedTags: uniqueTags });
   } catch (err) {
@@ -97,188 +183,124 @@ const suggestTags = async (req, res, next) => {
   }
 };
 
-const questionAnswer = async (req, res, next) => {
-  const { noteId, question } = req.body;
+const aiInteract = async (req, res, next) => {
+  const { noteId, messages, topic, confirmed, question, isPublic, mood } =
+    req.body;
+
   const userId = req.userId;
 
   try {
-    if (!question || !question.trim()) {
-      return res.status(400).json({ error: "Question is required" });
-    }
-
-    // If no noteId provided
-    if (!noteId) {
-      return res.status(400).json({
-        answer: "Please create or select a note to ask questions.",
-      });
-    }
-
-    // Find user and note
+    // Validate user
+    if (!userId) return AppError(res, "User not found", 400);
     const user = await authModal.findById(userId);
     if (!user) return AppError(res, "User not found", 404);
-
-    const note = await noteModel.findOne({ _id: noteId, user: userId });
-    if (!note) {
-      return AppError(res, "Note not found.", 404);
-    }
-
-    // Simple prompt for AI
-    const aiPrompt = QAPrompts(note, question);
-    let answer = await generateContent(aiPrompt);
-    answer = cleanAIContent(answer);
-
-    // Save as string
-    await aiModel.create({
-      note: note._id,
-      user: userId,
-      action: "qa",
-      question,
-      answer,
-    });
-
-    return res.status(200).json({ answer });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const improveWriting = async (req, res, next) => {
-  const { noteId, title, content } = req.body;
-  const userId = req.userId;
-  try {
-    const note = await noteModel.findOne({ _id: noteId, user: userId });
-    if (!note) return AppError(res, "Note not found", 404);
-    const target = [];
-
-    let improvedTitle = title;
-    let improvedContent = content;
-
-    if (title) {
-      const titlePrompt = ImproveTitlePrompts(title);
-
-      improvedTitle = await generateContent(titlePrompt);
-      note.title = improvedTitle;
-      target.push("title");
-    }
-
-    if (content) {
-      const contentPrompt = ImproveContentPrompts(content);
-      improvedContent = await generateContent(contentPrompt);
-      note.content = improvedContent;
-      target.push("content");
-    }
-    await note.save();
-    await aiModel.create({
-      note: note._id,
-      user: userId,
-      action: "improve-writing",
-      target,
-      answer: JSON.stringify({
-        title: improvedTitle || null,
-        content: improvedContent || null,
+    const counts = {
+      noteCount: await noteModel.countDocuments({ user: userId }),
+      publicCount: await noteModel.countDocuments({
+        user: userId,
+        isPublic: true,
       }),
-    });
+      privateCount: await noteModel.countDocuments({
+        user: userId,
+        isPublic: false,
+      }),
+    };
+    // -----------------------------
+    // 1️⃣ General chat (no note/topic)
+    // -----------------------------
+    if (messages && !topic && !question) {
+      const chatPrompt = generalChatPrompts(messages, counts);
 
-    // 5. Respond with updated note
-    return res.status(200).json({
-      message: "Note improved successfully",
-      note: {
-        title: note.title,
-        content: note.content,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+      let response = await generateContent(chatPrompt);
+      response = cleanAIContent(response);
 
-const chatOrCreateNote = async (req, res, next) => {
-  const { message, topic, confirmed, title, tags, isPublic } = req.body;
-  const userId = req.userId;
-
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ success: false, errors: errors.array() });
-  }
-
-  if (!userId) return AppError(res, "User not found", 400);
-
-  try {
-    // ---------------------
-    // 1️⃣ Chat mode (greetings or general chat)
-    // ---------------------
-    if (message && !topic) {
-      const chatPrompt = generalChatPrompts(message);
-      const chatResponse = await generateContent(chatPrompt);
       await aiModel.create({
         user: userId,
         action: "qa",
-        answer: chatPrompt.trim(),
+        question: messages[messages.length - 1]?.content || "General chat", // Store last message only
+        answer: response,
         target: [],
         model: "gemini-2.0-flash-001",
-        question: message,
       });
 
-      return res.status(200).json({
-        type: "chat",
-        response: chatResponse.trim(),
-      });
+      return res.status(200).json({ type: "chat", response });
     }
 
-    // ---------------------
-    // 2️⃣ Guided mode (ask for suggestions if topic provided but not confirmed)
-    // ---------------------
-    if (topic && !confirmed) {
-      const prompt = guidedChatPrompts(topic);
+    // -----------------------------
+    // 2️⃣ QA for an existing note
+    // -----------------------------
+    if (noteId && question) {
+      const note = await noteModel.findOne({ _id: noteId, user: userId });
+      if (!note) return AppError(res, "Note not found", 404);
 
-      let aiResponse = await generateContent(prompt);
+      const aiPrompt = QAPrompts(note, question, counts);
+      let answer = await generateContent(aiPrompt);
+      answer = cleanAIContent(answer);
+
+      await aiModel.create({
+        note: note._id,
+        user: userId,
+        action: "qa",
+        question,
+        answer,
+      });
+
+      return res.status(200).json({ type: "qa", answer });
+    }
+
+    // -----------------------------
+    // 3️⃣ Guided suggestions (topic + unconfirmed)
+    // -----------------------------
+    if (topic && !confirmed) {
+      let aiResponse = await generateContent(guidedChatPrompts(topic));
       aiResponse = cleanAIContent(aiResponse);
 
-      let suggestions = { titles: [], tags: [], isPublic: false };
+      let suggestions = {
+        title: "",
+        tags: [],
+        isPublic: false,
+        mood: "happy",
+        summary: "",
+      };
       try {
-        // ✅ Proper JSON extraction
         const match = aiResponse.match(/\{.*\}/s);
         if (match) suggestions = JSON.parse(match[0]);
       } catch (err) {
         console.log("Failed to parse suggestions:", aiResponse);
       }
 
-      // ✅ Save in AI history (make sure schema allows "suggestions")
       await aiModel.create({
         user: userId,
-        action: "suggestions", // <-- Add this to your schema enum
+        action: "suggestions",
         question: topic,
         answer: JSON.stringify(suggestions),
-        target: ["title", "tags", "isPublic"],
+        target: ["title", "tags", "isPublic", "mood", "summary"],
         model: "gemini-2.0-flash-001",
       });
 
-      return res.status(200).json({
-        type: "suggestions",
-        suggestions,
-      });
+      return res.status(200).json({ type: "suggestions", suggestions });
     }
 
-    // ---------------------
-    // 3️⃣ Quick / Confirmed note creation
-    // ---------------------
+    // -----------------------------
+    // 4️⃣ Quick AI note creation (topic + confirmed)
+    // -----------------------------
     if (topic && confirmed) {
-      const notePrompt = confirmedChatPrompts(topic);
-      let noteResponse = await generateContent(notePrompt);
+      let aiResponse = await generateContent(confirmedChatPrompts(topic));
+      aiResponse = cleanAIContent(aiResponse);
 
-      // Clean and parse AI output
       let noteData = {
         title: "Untitled Note",
         tags: [],
         content: "No content generated",
+        mood,
         summary: "",
       };
+
       try {
-        const cleaned = cleanAIContent(noteResponse);
-        const match = cleaned.match(/\{.*\}/s);
+        const match = aiResponse.match(/\{.*\}/s);
         if (match) noteData = JSON.parse(match[0]);
       } catch (err) {
-        console.log("Failed to parse note JSON:", noteResponse);
+        console.log("Failed to parse note JSON:", aiResponse);
       }
 
       const newNote = await noteModel.create({
@@ -289,6 +311,7 @@ const chatOrCreateNote = async (req, res, next) => {
         isPublic:
           typeof isPublic === "boolean" ? isPublic : noteData.isPublic || false,
         isArchived: false,
+        mood: (mood || noteData.mood || "Happy").toLowerCase(),
         summary: noteData.summary || "",
       });
 
@@ -302,56 +325,16 @@ const chatOrCreateNote = async (req, res, next) => {
         model: "gemini-2.0-flash-001",
       });
 
-      return res.status(201).json({
-        type: "note",
-        success: true,
-        note: newNote,
-      });
+      return res.status(201).json({ type: "note", note: newNote });
     }
 
-    // ---------------------
-    // 4️⃣ Fallback if no input
-    // ---------------------
     return AppError(
       res,
-      "Invalid request: provide either message or topic",
+      "Invalid request: provide messages, question, or topic",
       400
     );
-  } catch (error) {
-    next(error);
-  }
-};
-
-const aiReadNote = async (req, res, next) => {
-  const { noteId, question } = req.body;
-  const userId = req.userId;
-
-  try {
-    if (!question || !question.trim()) {
-      return res.status(400).json({ error: "Question is required" });
-    }
-
-    // Fetch note
-    const note = await noteModel.findOne({ _id: noteId, user: userId });
-    if (!note) return AppError(res, "Note not found", 404);
-
-    // AI prompt
-    const aiPrompt = readChatPrompts(note, question);
-
-    let answer = await generateContent(aiPrompt);
-    answer = cleanAIContent(answer);
-    // Save AI response
-    await aiModel.create({
-      note: note._id,
-      user: userId,
-      action: "qa",
-      question,
-      answer: answer.trim(),
-    });
-
-    return res.status(200).json({ answer: answer.trim() });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -366,11 +349,41 @@ function cleanAIContent(aiContent) {
     .trim(); // remove leading/trailing spaces
 }
 
+const getAiMessages = async (req, res, next) => {
+  const { noteId } = req.params;
+  const userId = req.userId;
+
+  try {
+    let query = { user: userId, action: "qa" };
+
+    // Only filter by note if noteId exists
+    if (noteId && noteId !== "general") {
+      query.note = noteId;
+    }
+
+    const messages = await aiModel
+      .find(query)
+      // .populate("note", "title content summary tags")
+      .sort({ createdAt: 1 });
+
+    const noteInfo =
+      noteId && noteId !== "general" && messages.length > 0
+        ? messages[0].note
+        : null;
+
+    return res.status(200).json({
+      messages: messages || [],
+      note: noteInfo || null,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   summarizeNote,
   suggestTags,
-  questionAnswer,
   improveWriting,
-  chatOrCreateNote,
-  aiReadNote,
+  getAiMessages,
+  aiInteract,
 };

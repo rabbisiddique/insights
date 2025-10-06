@@ -18,21 +18,6 @@ const updateNoteValidation = checkSchema({
     notEmpty: {
       errorMessage: "Content cannot be empty if provided",
     },
-    isLength: {
-      options: { min: 50, max: 1200 },
-      errorMessage: "Content must be between 50 and 1200 characters",
-    },
-  },
-  tags: {
-    in: ["body"],
-    optional: true,
-    isArray: {
-      errorMessage: "Tags must be an array",
-    },
-    isLength: {
-      options: { min: 1, max: 10 },
-      errorMessage: "Tags must contain between 1 and 10 items",
-    },
   },
 });
 

@@ -1,31 +1,11 @@
-import { format } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  Archive,
-  BookOpen,
-  BookOpenCheck,
-  Bot,
-  CalendarDays,
-  ChevronDown,
-  Download,
-  FileKey,
-  Frown,
-  Heart,
-  Lock,
-  Meh,
-  Pencil,
-  PenTool,
-  Smile,
-  Sparkles,
-  Tag,
-  TrendingUp,
-} from "lucide-react";
+import { ChevronDown, PenTool, Sparkles, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import ReactPaginate from "react-paginate";
 import { useNavigate, useParams } from "react-router-dom";
 import Dialog from "../components/Dialog";
+import NotesCard from "../components/NotesCard";
 import { useGetFilteredNotesQuery } from "../features/notes/notesAPI";
-import { useArchive } from "../hooks/useArchive";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -44,7 +24,6 @@ export default function HomePage() {
     page,
     limit: 6,
   });
-  const { handleArchive } = useArchive();
 
   const handleSearchInput = (e) => {
     const value = e.target.value;
@@ -57,35 +36,6 @@ export default function HomePage() {
 
   const options = ["Created Date", "Title", "Modified Date"];
 
-  const getMoodIcon = (mood) => {
-    switch (mood.toLowerCase()) {
-      case "happy":
-        return <Smile className="w-4 h-4 text-amber-500" />;
-      case "over the moon":
-        return <Heart className="w-4 h-4 text-rose-500" />;
-      case "sad":
-        return <Frown className="w-4 h-4 text-blue-500" />;
-      case "heartbreaking":
-        return <Frown className="w-4 h-4 text-red-500" />;
-      default:
-        return <Meh className="w-4 h-4 text-slate-500" />;
-    }
-  };
-
-  const getMoodColor = (mood) => {
-    switch (mood.toLowerCase()) {
-      case "happy":
-        return "bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border-amber-200";
-      case "over the moon":
-        return "bg-gradient-to-r from-rose-100 to-pink-100 text-rose-800 border-rose-200";
-      case "sad":
-        return "bg-gradient-to-r from-blue-100 to-sky-100 text-blue-800 border-blue-200";
-      case "heartbreaking":
-        return "bg-gradient-to-r from-red-100 to-rose-100 text-red-800 border-red-200";
-      default:
-        return "bg-gradient-to-r from-slate-100 to-gray-100 text-slate-800 border-slate-200";
-    }
-  };
   const handlePageChange = (selectedItem) => {
     setPage(selectedItem.selected + 1); // react-paginate is 0-based
   };
@@ -94,67 +44,27 @@ export default function HomePage() {
 
   const tabs = ["All Notes", "Public", "Private", "Archived"];
 
-  const filteredNotes = (filteredData?.docs || []).filter((note) => {
-    const search = searchQuery.toLowerCase();
-    const matchesTitle = note.title.toLowerCase().includes(search);
-    const matchesContent = note.content.toLowerCase().includes(search);
-    const matchesTags = note.tags.some((tag) =>
-      tag.toLowerCase().includes(search)
-    );
-
-    if (activeTab === "All Notes")
-      return (
-        (matchesTitle || matchesContent || matchesTags) && !note.isArchived
-      );
-    if (activeTab === "Private")
-      return (
-        (matchesTitle || matchesContent || matchesTags) &&
-        !note.isPublic &&
-        !note.isArchived
-      );
-    if (activeTab === "Public")
-      return (
-        (matchesTitle || matchesContent || matchesTags) &&
-        note.isPublic &&
-        !note.isArchived
-      );
-    if (activeTab === "Archived") return note.isArchived;
-
-    return matchesTitle || matchesContent || matchesTags;
-  });
-
   // Then sort
-  const sortedNotes = [...filteredNotes].sort((a, b) => {
-    if (sortBy === "Created Date")
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    if (sortBy === "Modified Date")
-      return new Date(b.updatedAt) - new Date(a.updatedAt);
-    if (sortBy === "Title") return a.title.localeCompare(b.title);
-    return 0;
-  });
-
-  const formattedDate = (date) => {
-    return format(new Date(date), "MMM dd, yyy");
-  };
 
   return (
     <>
       {/* Header */}
-      <div className="relative">
-        <div className="max-w-6xl mx-auto mt-20 p-5">
-          <div className="w-full h-auto mb-[21px] p-[20px] max-xs:mb-0 inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl -z-10">
-            <div className="flex items-center justify-between mb-8 ">
+      <div className="relative min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 md:py-12 lg:py-20">
+          {/* Header Section */}
+          <div className="w-full mb-6 sm:mt-0 mt-1 md:mb-8 p-4 md:p-6 lg:p-8 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-2xl md:rounded-3xl backdrop-blur-sm border border-indigo-200/20 dark:border-indigo-800/30">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0 ">
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <h1 className="text-4xl max-xs:text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
                   My Notes
                 </h1>
-                <div className="flex items-center space-x-2 mt-2">
-                  <TrendingUp className="w-4 h-4 text-indigo-600" />
-                  <p className="text-slate-600 dark:text-slate-300 text-lg max-xs:text-sm">
+                <div className="flex items-center gap-2 mt-2">
+                  <TrendingUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <p className="text-slate-600 dark:text-slate-400 text-sm md:text-base lg:text-lg">
                     notes found
                   </p>
                 </div>
@@ -166,15 +76,12 @@ export default function HomePage() {
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
                 <button
-                  className="bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 
-             text-white px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl 
-             transition-all duration-200 transform hover:scale-105 flex justify-center items-center gap-2.5 
-             rounded-xl cursor-pointer max-xs:py-2 max-xs:px-4 max-xs:text-sm"
+                  className="w-full md:w-auto bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 dark:from-indigo-500 dark:to-purple-600 dark:hover:from-indigo-600 dark:hover:to-purple-700 text-white px-4 md:px-6 lg:px-8 py-2 md:py-3 text-sm md:text-base lg:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex justify-center items-center gap-2 rounded-xl cursor-pointer"
                   onClick={() => navigate("/notes/new")}
                 >
-                  <PenTool className="w-5 h-5 max-xs:w-3 max-xs:h-3" />
+                  <PenTool className="w-4 h-4 md:w-5 md:h-5" />
                   New Note
-                  <Sparkles className="w-4 h-4 max-xs:w-3 max-xs:h-3" />
+                  <Sparkles className="w-3 h-3 md:w-4 md:h-4" />
                 </button>
               </motion.div>
             </div>
@@ -182,15 +89,15 @@ export default function HomePage() {
 
           {/* Search and Filters */}
           <motion.div
-            className="flex gap-4 mb-6 bg-white dark:bg-[#00000000] p-5 rounded-xl shadow-lg relative max-xs:flex-col"
+            className="flex flex-col lg:flex-row gap-3 md:gap-4 mb-6 md:mb-8 bg-white dark:bg-gray-900 p-4 md:p-5 lg:p-6 rounded-xl md:rounded-2xl shadow-lg dark:shadow-2xl dark:shadow-purple-500/5 border border-gray-200 dark:border-gray-800"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             {/* Search input */}
-            <div className="flex-1 relative ">
+            <div className="flex-1 relative">
               <svg
-                className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                className="w-4 h-4 md:w-5 md:h-5 absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -205,30 +112,27 @@ export default function HomePage() {
               <input
                 type="text"
                 placeholder="Search notes by title, content, or tags..."
-                className="dark:bg-[#00000000] w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg bg-white 
-                     focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full pl-10 md:pl-12 pr-4 py-2.5 md:py-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-600 focus:border-transparent transition-all text-sm md:text-base"
                 value={searchQuery}
                 onChange={handleSearchInput}
               />
             </div>
 
-            {/* Dropdown */}
-            <div className="max-xs:flex gap-2 flex">
-              <div className="relative">
+            {/* Dropdown and Actions */}
+            <div className="flex gap-2 md:gap-3">
+              <div className="relative flex-1 lg:flex-none">
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setOpen(!open)}
-                  className="w-48 max-xs:w-[264px] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 
-                     rounded-lg px-4 py-3 flex items-center justify-between text-sm font-medium 
-                     focus:outline-none focus:ring-2 focus:ring-purple-500 transition cursor-pointer"
+                  className="w-full lg:w-48 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 flex items-center justify-between text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-600 transition cursor-pointer hover:border-purple-300 dark:hover:border-purple-700"
                 >
-                  {selected}
+                  <span className="truncate">{selected}</span>
                   <motion.span
                     animate={{ rotate: open ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <ChevronDown className="w-4 h-4 text-gray-500" />
+                    <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                   </motion.span>
                 </motion.button>
 
@@ -239,8 +143,7 @@ export default function HomePage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute mt-2 w-48 bg-white dark:bg-slate-800 border border-gray-200 
-                         dark:border-slate-700 rounded-lg shadow-lg z-50 overflow-hidden cursor-pointer"
+                      className="absolute mt-2 w-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl shadow-xl dark:shadow-2xl dark:shadow-purple-500/10 z-50 overflow-hidden"
                     >
                       {options.map((opt) => (
                         <motion.li
@@ -253,7 +156,7 @@ export default function HomePage() {
                             setSelected(opt);
                             setOpen(false);
                           }}
-                          className="px-4 py-2 cursor-pointer text-sm text-slate-700 dark:text-slate-200"
+                          className="px-3 md:px-4 py-2 md:py-2.5 cursor-pointer text-sm text-slate-700 dark:text-slate-200 hover:text-purple-600 dark:hover:text-purple-400 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                         >
                           {opt}
                         </motion.li>
@@ -262,15 +165,13 @@ export default function HomePage() {
                   )}
                 </AnimatePresence>
               </div>
-
-              {/* Action button */}
+              <Dialog type="all" />
             </div>
           </motion.div>
 
+          {/* Tabs */}
           <motion.div
-            className="flex bg-gray-100 dark:bg-gray-800 rounded-full p-1 mb-8 
-             shadow-[inset_2px_2px_6px_rgba(0,0,0,0.05),inset_-2px_-2px_6px_rgba(255,255,255,0.8)] 
-             dark:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(255,255,255,0.1)] max-xs:flex-wrap max-xs:p-[10px] "
+            className="flex bg-gray-100 dark:bg-gray-800 rounded-xl md:rounded-2xl p-1 md:p-1.5 mb-6 md:mb-8 shadow-[inset_2px_2px_6px_rgba(0,0,0,0.05),inset_-2px_-2px_6px_rgba(255,255,255,0.8)] dark:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_rgba(255,255,255,0.05)] overflow-x-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -281,221 +182,36 @@ export default function HomePage() {
                 onClick={() => setActiveTab(tab)}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className={`flex-1 px-6 py-2 max-xs:px-3 max-xs:py-1 rounded-full text-sm font-medium transition-all duration-200 cursor-pointer
-        ${
-          activeTab === tab
-            ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md"
-            : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-        }`}
+                className={`flex-1 min-w-fit px-4 md:px-6 py-2 md:py-2.5 rounded-lg md:rounded-xl text-xs md:text-sm font-medium transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                  activeTab === tab
+                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                }`}
               >
                 {tab}
               </motion.button>
             ))}
           </motion.div>
 
-          <AnimatePresence mode="wait">
-            {sortedNotes.length > 0 ? (
-              <motion.div
-                key={activeTab}
-                className=" grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 "
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-              >
-                {sortedNotes.map((note, index) => (
-                  <motion.div
-                    key={note._id}
-                    className="group relative bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-all duration-300 cursor-pointer"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    whileHover={{
-                      y: -5,
-                      transition: { duration: 0.2, ease: "easeOut" },
-                    }}
-                  >
-                    {/* Title */}
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 text-lg mb-3 truncate">
-                      {note.title}
-                    </h3>
+          {/* Notes Grid */}
 
-                    {/* Mood & Privacy */}
-                    <div className="flex items-center gap-2 mb-4">
-                      <span
-                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border ${getMoodColor(
-                          note.mood
-                        )}`}
-                      >
-                        {getMoodIcon(note.mood)}
-                        {note.mood}
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
-                        <span>
-                          {!note.isPublic ? (
-                            <Lock className="w-3.5 h-3.5" />
-                          ) : (
-                            <FileKey className="w-3.5 h-3.5" />
-                          )}
-                        </span>
-                        {note.isPublic}
-                      </span>
-                    </div>
-
-                    {/* Content */}
-                    <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3">
-                      {note.content}
-                    </p>
-
-                    {/* Tags */}
-                    {note.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {note.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 border border-gray-200 dark:border-gray-600"
-                          >
-                            <Tag className="w-3 h-3" />
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Date */}
-                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-3">
-                      <CalendarDays className="w-4 h-4 mr-2" />
-                      {formattedDate(note?.createdAt)}
-                    </div>
-
-                    {/* Action buttons with smooth slide/fade */}
-                    {/* Action buttons with smooth slide/fade */}
-                    <motion.div
-                      className=" flex justify-between items-center px-2 py-1 mt-3  opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 ease-out pointer-events-none group-hover:pointer-events-auto z-20
-    "
-                    >
-                      <div className="flex items-center">
-                        <button
-                          className="flex cursor-pointer   justify-center items-center gap-1 px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-all duration-200"
-                          onClick={() => navigate(`/notes/${note._id}`)}
-                        >
-                          <div className="tooltip" data-tip="Edit">
-                            <Pencil size={15} />
-                          </div>
-                        </button>
-                        <button
-                          className="flex justify-center cursor-pointer items-center gap-1 px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-all duration-200"
-                          onClick={() => navigate(`/chat/${note._id}`)}
-                        >
-                          <div className="tooltip" data-tip="Chat">
-                            <Bot size={15} />
-                          </div>
-                        </button>
-                        <button
-                          className="flex justify-center cursor-pointer items-center gap-1 px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-all duration-200"
-                          onClick={() => {
-                            const noteText = `
-                              Title: ${note.title}
-                              Content: ${note.content}
-                              Tags: ${note.tags.join(", ")}
-                              Mood: ${note.mood}
-                              Privacy: ${note.isPublic ? "Public" : "Private"}
-                              Created At: ${new Date(
-                                note.createdAt
-                              ).toLocaleString()}
-                              Updated At: ${new Date(
-                                note.updatedAt
-                              ).toLocaleString()}
-                                  `;
-
-                            const blob = new Blob([noteText], {
-                              type: "text/plain",
-                            });
-                            const url = URL.createObjectURL(blob);
-
-                            const link = document.createElement("a");
-                            link.href = url;
-                            link.download = `${note.title.replace(
-                              /\s+/g,
-                              "_"
-                            )}.txt`; // plain text file
-                            link.click();
-                            URL.revokeObjectURL(url); // clean up
-                          }}
-                        >
-                          <div className="tooltip" data-tip="download note">
-                            <Download className="w-4 h-4" />
-                          </div>
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-center gap-2">
-                        <span
-                          className="tooltip p-2 rounded-md text-gray-500 dark:text-gray-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-600 transition-all duration-200 cursor-pointer"
-                          onClick={() => navigate(`/read/${note._id}`)}
-                          data-tip="Read"
-                        >
-                          <BookOpenCheck size={15} />
-                        </span>
-                        <span
-                          className="tooltip p-2 rounded-md text-gray-500 dark:text-gray-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-600 transition-all duration-200 cursor-pointer"
-                          data-tip={note.isArchived ? "Unarchive" : "Archive"}
-                          onClick={() => handleArchive(note._id, note)}
-                        >
-                          <Archive className="w-5 h-5" />
-                        </span>
-                        <span>
-                          <Dialog deleteId={note._id} />
-                        </span>
-                      </div>
-                    </motion.div>
-                  </motion.div>
-                ))}
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="shadow-2xl border-0 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 p-8 text-center"
-              >
-                <div className="py-16">
-                  <div className="relative mb-8">
-                    <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-full flex items-center justify-center mx-auto">
-                      <BookOpen className="w-12 h-12 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <Sparkles className="w-6 h-6 text-purple-500 absolute -top-2 -right-2" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">
-                    No notes found
-                  </h3>
-                  <p className="text-slate-600 dark:text-slate-300 text-lg mb-8">
-                    Start by creating your first AI-powered note
-                  </p>
-                  <button
-                    className="inline-flex items-center justify-center bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white h-14 px-8 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 cursor-pointer"
-                    onClick={() => navigate("/notes")}
-                  >
-                    <PenTool className="w-5 h-5 mr-2" />
-                    Create Your First Note
-                    <Sparkles className="w-4 h-4 ml-2" />
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <NotesCard
+            filteredData={filteredData}
+            sortBy={sortBy}
+            activeTab={activeTab}
+            searchQuery={searchQuery}
+          />
+          {/* Pagination */}
           {pageCount > 1 && (
             <ReactPaginate
               breakLabel={
-                <span className="px-3 py-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200">
+                <span className="px-2 md:px-3 py-2 text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 transition-colors duration-200">
                   ...
                 </span>
               }
               nextLabel={
-                <div className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-md hover:scale-102 transition-all duration-200">
-                  <span>Next</span>
+                <div className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 rounded-lg md:rounded-xl border-2 border-gray-200 dark:border-gray-800 shadow-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-md transition-all duration-200 text-sm">
+                  <span className="hidden sm:inline">Next</span>
                   <svg
                     className="w-4 h-4"
                     fill="none"
@@ -512,7 +228,7 @@ export default function HomePage() {
                 </div>
               }
               previousLabel={
-                <div className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-md hover:scale-102 transition-all duration-200">
+                <div className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 rounded-lg md:rounded-xl border-2 border-gray-200 dark:border-gray-800 shadow-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-md transition-all duration-200 text-sm">
                   <svg
                     className="w-4 h-4"
                     fill="none"
@@ -526,17 +242,18 @@ export default function HomePage() {
                       d="M15 19l-7-7 7-7"
                     />
                   </svg>
-                  <span>Previous</span>
+                  <span className="hidden sm:inline">Previous</span>
                 </div>
               }
               onPageChange={handlePageChange}
-              pageRangeDisplayed={5}
+              pageRangeDisplayed={3}
+              marginPagesDisplayed={1}
               pageCount={pageCount}
-              containerClassName="flex flex-wrap items-center justify-center gap-2 mt-6"
-              pageLinkClassName="flex items-center justify-center w-12 h-12 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-md hover:scale-102 transition-all duration-200"
-              activeLinkClassName="!bg-gradient-to-r !from-blue-500 !to-purple-600 !text-white !border-transparent !shadow-lg !scale-105 hover:!shadow-xl"
+              containerClassName="flex flex-wrap items-center justify-center gap-2 mt-6 md:mt-8"
+              pageLinkClassName="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-800 rounded-lg md:rounded-xl shadow-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-md transition-all duration-200 text-sm"
+              activeLinkClassName="!bg-gradient-to-r !from-blue-500 !to-purple-600 !text-white !border-transparent !shadow-lg hover:!shadow-xl"
               disabledClassName="opacity-50 cursor-not-allowed"
-              breakLinkClassName="flex items-center justify-center w-12 h-12 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200"
+              breakLinkClassName="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 transition-colors duration-200"
             />
           )}
         </div>
