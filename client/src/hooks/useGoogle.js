@@ -8,8 +8,14 @@ export const useGoogle = () => {
     try {
       setIsLoading(true);
       // slight delay so loader shows
+      const baseUrl =
+        window.location.hostname === "localhost"
+          ? "http://localhost:5000"
+          : "https://insights-k5t9.onrender.com";
+
+      // slight delay so loader shows
       setTimeout(() => {
-        window.location.href = "http://localhost:5000/api/auth/google";
+        window.location.href = `${baseUrl}/api/auth/google`;
       }, 100);
     } catch (error) {
       setIsLoading(false);
