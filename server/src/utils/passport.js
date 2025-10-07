@@ -4,17 +4,15 @@ const authModal = require("../models/auth.model");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const isProd = process.env.NODE_ENV === "production";
 
-const BACKEND_DOMAIN = isProd
-  ? process.env.FRONTEND_URL
-  : "http://localhost:5000";
-
-const GOOGLE_CALLBACK_URL = `${BACKEND_DOMAIN}/api/auth/google/callback`;
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: GOOGLE_CALLBACK_URL,
+      callbackURL:
+        process.env.NODE_ENV === "production"
+          ? "https://insights-k5t9.onrender.com/api/auth/google/callback"
+          : "http://localhost:5000/api/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
