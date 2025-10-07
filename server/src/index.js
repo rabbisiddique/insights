@@ -26,14 +26,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(rootDir, "/client/dist")));
 
-// CORS: allow localhost in dev; in prod either skip (same origin) or use FRONTEND_URL
-const allowedOrigin = isProd
-  ? process.env.FRONTEND_URL // your Render frontend URL
-  : "http://localhost:5173";
-
 app.use(
   cors({
-    origin: allowedOrigin,
+    origin: ["http://localhost:5173", "https://insights-k5t9.onrender.com"],
     credentials: true,
   })
 );
