@@ -24,7 +24,7 @@ const isProd = process.env.NODE_ENV === "production";
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(express.static(path.join(rootDir, "../client/dist")));
+app.use(express.static(path.join(rootDir, "/client/dist")));
 
 // CORS: allow localhost in dev; in prod either skip (same origin) or use FRONTEND_URL
 if (!isProd) {
@@ -55,7 +55,7 @@ app.use("/api/ai", aiRouter);
 // -------------------- Serve React Frontend --------------------
 // -------------------- Serve React Frontend --------------------
 app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(rootDir, "../client/dist/index.html"));
+  res.sendFile(path.join(rootDir, "/client/dist/index.html"));
 });
 
 // ---------- ---------- Error Handler --------------------
