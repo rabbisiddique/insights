@@ -15,8 +15,14 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useGetUserQuery, useSignOutMutation } from "../features/auth/authAPI";
+import {
+  authApi,
+  useGetUserQuery,
+  useSignOutMutation,
+} from "../features/auth/authAPI";
+import { profileApi } from "../features/profile/profileAPI";
 import { useAuth } from "../hooks/useAuth";
 import { useDarkMode } from "../hooks/useDarkMode";
 
@@ -27,18 +33,36 @@ const Navbar = () => {
   const [signOut] = useSignOutMutation();
   const { refetch } = useGetUserQuery();
   const { user, isLoading } = useAuth(true);
+  const dispatch = useDispatch();
 
   const handleLogout = async () => {
     try {
-      await signOut().unwrap(); // unwrap to catch errors
-      await refetch();
-      navigate("/login");
+      // Call the logout endpoint first
+      await signOut().unwrap();
+
+      // Wait a tiny bit for the mutation to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Then clear all RTK Query caches
+      dispatch(authApi.util.resetApiState());
+      dispatch(profileApi.util.resetApiState());
+
+      // Show success message
       toast.success("Logged out successfully!");
+
+      // Navigate to login page
+      navigate("/login", { replace: true });
     } catch (error) {
-      toast.error(error?.data?.errors || "Logout failed");
+      console.error("Logout error:", error);
+
+      // Clear cache even on error
+      dispatch(authApi.util.resetApiState());
+      dispatch(profileApi.util.resetApiState());
+
+      toast.error(error?.data?.message || "Logout failed");
+      navigate("/login", { replace: true });
     }
   };
-
   const { theme, toggleTheme } = useDarkMode();
 
   const navigation = [

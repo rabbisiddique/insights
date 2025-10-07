@@ -10,6 +10,7 @@ export const profileApi = createApi({
     },
     credentials: "include",
   }),
+  tagTypes: ["User"],
   endpoints: (builder) => ({
     updateProfile: builder.mutation({
       query: (body) => ({

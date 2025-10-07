@@ -4,7 +4,7 @@ import { ArrowRight, Eye, EyeOff, Mail, User } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
-import { useSignUpMutation } from "../features/auth/authAPI";
+import { useGetUserQuery, useSignUpMutation } from "../features/auth/authAPI";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { useGoogle } from "../hooks/useGoogle";
 import { showApiErrors } from "../utils/ShowApiError";
@@ -16,6 +16,7 @@ export default function SignUpPage() {
   const { theme, toggleTheme } = useDarkMode();
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [signUp, { isLoading, isError }] = useSignUpMutation();
+  const { refetch } = useGetUserQuery();
   const { handleGoogleSubmit, isLoading: googleIsLoading } = useGoogle();
   const navigate = useNavigate();
 
@@ -29,6 +30,7 @@ export default function SignUpPage() {
     try {
       const payload = { username, email, password };
       await signUp(payload).unwrap();
+      await refetch();
 
       setTimeout(() => {
         navigate("/home");

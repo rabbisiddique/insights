@@ -1,30 +1,46 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import { useGetUserQuery } from "../features/auth/authAPI";
 
-export const useAuth = (checkNow = false) => {
-  const [skip, setSkip] = useState(!checkNow);
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
-  const { data, error, isLoading, refetch } = useGetUserQuery();
+export const useAuth = (requireAuth = false) => {
+  const navigate = useNavigate();
+
+  const { data, error, isLoading, refetch } = useGetUserQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+    refetchOnReconnect: true,
+  });
+
+  const user = data?.user || null;
+  const isAuthenticated = !!user;
 
   useEffect(() => {
-    if (checkNow) setSkip(false);
-  }, [checkNow]);
+    // Handle authentication errors
+    if (error && !isLoading) {
+      const errorMessage = error?.data?.message;
 
-  useEffect(() => {
-    if (data?.user) {
-      setIsAuthenticated(true);
-    } else if (error) {
-      if (!skip) {
-        toast.error(error?.data?.message || "Auth error");
+      // Only show error and redirect if auth is required
+      if (requireAuth) {
+        // Don't show toast for expected auth failures
+        if (errorMessage && !errorMessage.includes("Unauthorized")) {
+          toast.error(errorMessage);
+        }
+        navigate("/login", { replace: true });
       }
-      setIsAuthenticated(false);
     }
-  }, [data, error, skip]);
+  }, [error, isLoading, requireAuth, navigate]);
+
+  useEffect(() => {
+    // Redirect to login if auth is required but user is not authenticated
+    if (requireAuth && !isLoading && !isAuthenticated && !error) {
+      navigate("/login", { replace: true });
+    }
+  }, [requireAuth, isLoading, isAuthenticated, error, navigate]);
 
   return {
-    isAuthenticated: !!data?.user,
+    isAuthenticated,
     isLoading,
-    user: data?.user || null,
+    user,
+    refetch,
   };
 };

@@ -10,6 +10,7 @@ export const authApi = createApi({
     },
     credentials: "include",
   }),
+  tagTypes: ["User"], // Add this
   endpoints: (builder) => ({
     signUp: builder.mutation({
       query: (body) => ({
@@ -24,21 +25,23 @@ export const authApi = createApi({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["User"], // Add this to refetch user after login
     }),
     getUser: builder.query({
       query: () => ({
         url: "/check-auth",
         method: "GET",
-        providesTags: ["User"],
       }),
+      providesTags: ["User"],
+      keepUnusedDataFor: 60, // Add this
     }),
     signOut: builder.mutation({
       query: () => ({
         url: "/sign-out",
         method: "POST",
       }),
+      invalidatesTags: ["User"], // Add this to clear cache on logout
     }),
-
     forgotPassword: builder.mutation({
       query: (body) => ({
         url: "/forgot-password",
@@ -48,7 +51,7 @@ export const authApi = createApi({
     }),
     resetPassword: builder.mutation({
       query: ({ token, newPassword }) => ({
-        url: `/reset-password/${token}`, // include token in URL
+        url: `/reset-password/${token}`,
         method: "POST",
         body: { newPassword },
       }),

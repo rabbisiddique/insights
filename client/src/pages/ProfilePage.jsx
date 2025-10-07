@@ -56,7 +56,6 @@ export default function ProfilePage() {
         newPassword: "",
       });
     } else {
-      // clear everything if no user
       setProfileData({
         username: "",
         avatar: null,
@@ -64,7 +63,7 @@ export default function ProfilePage() {
         newPassword: "",
       });
     }
-  }, [user?._id, user, user?.avatar, user?.username]);
+  }, [user]); // Just depend on user, not individual properties
 
   const handleInputChange = (field, value) => {
     setProfileData((prev) => ({
