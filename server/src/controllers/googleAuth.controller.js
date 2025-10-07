@@ -10,8 +10,11 @@ const googleSignIn = (req, res, next) => {
   try {
     generateToken(res, userId);
     generateRefreshToken(res, userId);
+    const frontendUrl = isProd
+      ? "https://insights-k5t9.onrender.com/home"
+      : "http://localhost:5173/home";
 
-    res.redirect("http://localhost:5173/home");
+    return res.redirect(frontendUrl);
   } catch (err) {
     next(err);
   }
