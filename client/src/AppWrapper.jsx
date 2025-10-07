@@ -20,10 +20,12 @@ import LoginPage from "./pages/LoginPage";
 import NoteReadPage from "./pages/NoteReadPage";
 import NotesDashboard from "./pages/NotesDashboard";
 import NotFoundPage from "./pages/NotFoundPage";
+import PrivacyPage from "./pages/PrivacyPage";
 import ProfilePage from "./pages/ProfilePage";
 import PublicPage from "./pages/PublicPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SignUpPage from "./pages/SignUpPage";
+import TermsPage from "./pages/TermsPage";
 import VerifyYourEmail from "./pages/VerifyYourEmail";
 const AppWrapper = () => {
   const location = useLocation();
@@ -120,6 +122,8 @@ const AppWrapper = () => {
           <Route path="/sign-up" element={<SignUpPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-email/:token" element={<VerifyYourEmail />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           <Route
             path="/reset-password/:token"
             element={<ResetPasswordPage />}

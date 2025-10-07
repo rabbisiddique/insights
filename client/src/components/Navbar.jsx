@@ -2,13 +2,11 @@ import { motion } from "framer-motion";
 import {
   BadgeAlert,
   BookOpen,
-  BookOpenCheck,
   Bot,
   Globe,
   LogOut,
   Menu,
   PenTool,
-  Sparkles,
   User,
   Verified,
   X,
@@ -78,25 +76,27 @@ const Navbar = () => {
   return (
     <div className=" bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30">
       {/* Navigation Header (fixed for robust behavior) */}
-      <nav className="fixed top-0 left-0 right-0 z-60 w-full bg-white/80 dark:bg-slate-800/80 dark:shadow-2xl backdrop-blur-xl shadow-lg border-b border-slate-200/50 dark:border-slate-700/50">
+      <nav className="fixed top-0 left-0 right-0 z-60 w-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl shadow-lg border-b border-slate-200/50 dark:border-slate-700/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link
-                to="/home"
-                className="flex items-center space-x-3 group cursor-pointer"
-              >
-                <div className="relative">
-                  <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl flex items-center justify-center transform group-hover:scale-110 transition-transform duration-200">
-                    <BookOpenCheck className="w-6 h-6 max-xs:w-4 max-xs:h-4 text-white" />
-                  </div>
-                  <Sparkles className="w-3 h-3 text-yellow-400 absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                </div>
-                <span className="text-2xl max-xs:text-lg font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-                  NotesWise
-                </span>
-              </Link>
-            </div>
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <Link
+              to="/home"
+              className="flex items-center space-x-3 group cursor-pointer"
+            >
+              <div className="relative w-16 h-16 sm:w-14 xs:w-12 flex items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 transform transition-transform duration-200 group-hover:scale-110 shadow-lg">
+                <img
+                  src="/noteLogo.png"
+                  alt="NoteWise Logo"
+                  className="w-12 h-12 sm:w-10 xs:w-8 object-contain"
+                />
+                {/* Sparkle */}
+                <span className="absolute -top-1 -right-1 w-4 h-4 xs:w-2 xs:h-2 bg-yellow-400 rounded-full opacity-0 group-hover:opacity-100 animate-pulse"></span>
+              </div>
+              <span className="hidden md:block text-3xl sm:text-2xl xs:text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                NotesWise
+              </span>
+            </Link>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-2">
@@ -120,13 +120,15 @@ const Navbar = () => {
               })}
             </div>
 
-            {/* Right side controls */}
+            {/* Right Controls */}
             <div className="flex items-center space-x-3">
+              {/* Theme Toggle */}
               <motion.button
                 onClick={toggleTheme}
-                className="p-3 rounded-xl cursor-pointer dark:bg-gray-800 bg-gray-200  transition-colors duration-200"
+                className="p-3 rounded-xl cursor-pointer dark:bg-gray-800 bg-gray-200 transition-colors duration-200"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                aria-label="Toggle theme"
               >
                 <motion.div
                   animate={{ rotate: theme === "light" ? 180 : 0 }}
@@ -163,12 +165,13 @@ const Navbar = () => {
                   )}
                 </motion.div>
               </motion.button>
+
+              {/* Avatar & Logout */}
               <div className="flex items-center space-x-3">
-                <div className="relative inline-block">
-                  {/* Avatar with ring */}
-                  <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center">
+                <div className="relative">
+                  <div className="w-12 h-12 p-[2px] rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center">
                     <img
-                      className="w-full h-full object-cover rounded-full"
+                      className="w-full h-full object-cover rounded-full cursor-pointer"
                       onClick={() => navigate("/profile")}
                       src={
                         user?.avatar ||
@@ -177,8 +180,6 @@ const Navbar = () => {
                       alt="avatar"
                     />
                   </div>
-
-                  {/* Verified badge */}
                   <div className="absolute bottom-0 right-0 w-5 h-5 bg-white rounded-full flex items-center justify-center border border-gray-200 shadow animate-pulse">
                     {user?.verified ? (
                       <Verified className="w-3 h-3 text-blue-500" />
@@ -190,19 +191,18 @@ const Navbar = () => {
 
                 <button
                   onClick={handleLogout}
-                  className="hidden md:flex items-center space-x-2 hover:bg-gray-50   hover:text-indigo-700  hover:shadow-lg w-full h-[40px] p-[16px] font-semibold cursor-pointer rounded-lg transition-all duration-500"
+                  className="hidden md:flex items-center space-x-2 px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:bg-gray-50 hover:text-indigo-700 hover:shadow-lg"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Logout</span>
                 </button>
               </div>
 
-              {/* Mobile menu button */}
+              {/* Mobile Menu Button */}
               <button
-                variant="ghost"
-                size="sm"
                 className="md:hidden p-2 rounded-xl"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label="Toggle mobile menu"
               >
                 <motion.div
                   initial={false}
@@ -253,7 +253,6 @@ const Navbar = () => {
                 onClick={handleLogout}
                 className="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 w-full text-left transition-all duration-200"
               >
-                {/* <LogOut className="w-5 h-5" /> */}
                 <span>Logout</span>
               </button>
             </div>
