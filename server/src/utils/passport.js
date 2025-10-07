@@ -3,13 +3,16 @@ const authModal = require("../models/auth.model");
 const { AppError } = require("../middleware/errorHandler");
 
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const isProd = process.env.NODE_ENV === "production";
 
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:5000/api/auth/google/callback",
+      callbackURL: !isProd
+        ? "http://localhost:5000/api/auth/google/callback"
+        : `${process.env.FRONTEND_URL}/api/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
