@@ -25,8 +25,8 @@ export const useAuth = (requireAuth = false) => {
         if (errorMessage && !errorMessage.includes("Unauthorized")) {
           toast.error(errorMessage);
         }
-        navigate("/login", { replace: true });
       }
+      // navigate("/login", { replace: true });
     }
   }, [error, isLoading, requireAuth, navigate]);
 

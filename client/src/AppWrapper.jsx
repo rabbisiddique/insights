@@ -31,7 +31,7 @@ const AppWrapper = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isLoading } = useAuth();
   const hideNavbar = ["/", "/login", "/sign-up", "/forgot-password", "/404"];
 
   const showNavbar =
@@ -114,21 +114,21 @@ const AppWrapper = () => {
         }}
       />{" "}
       <div>
-        {/* offset for fixed navbar (approx 80px) */}
         <Routes>
-          {/* Public routes */}
+          {/* ---------------------- PUBLIC ROUTES ---------------------- */}
           <Route path="/" element={<NotesDashboard />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-email/:token" element={<VerifyYourEmail />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/terms" element={<TermsPage />} />
           <Route
             path="/reset-password/:token"
             element={<ResetPasswordPage />}
           />
-          {/* Protected routes */}
+
+          {/* ---------------------- PROTECTED ROUTES ---------------------- */}
           <Route
             path="/home/:searchQuery?"
             element={
@@ -201,10 +201,10 @@ const AppWrapper = () => {
               </ProtectedRoute>
             }
           />
-          {/* Fallback */}
+
+          {/* ---------------------- FALLBACK ---------------------- */}
           <Route path="/404" element={<NotFoundPage />} />
-          {/* Catch-all route for unmatched paths, redirecting to /404 */}
-          <Route path="*" element={<Navigate to="/404" replace />} />{" "}
+          <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
       </div>
     </>
