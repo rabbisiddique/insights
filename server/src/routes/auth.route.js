@@ -24,6 +24,10 @@ const {
   verifyEmailLimiter,
 } = require("../middleware/rateLimit");
 const forgotValidation = require("../middleware/validation/forgotValidation");
+const {
+  generateToken,
+  generateRefreshToken,
+} = require("../utils/generateToken");
 const router = express.Router();
 
 router.post(
