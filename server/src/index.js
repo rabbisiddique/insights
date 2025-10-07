@@ -18,7 +18,6 @@ require("./config/ai");
 
 const app = express();
 const PORT = process.env.PORT || 7000;
-const isProd = process.env.NODE_ENV === "production";
 
 // -------------------- Middleware --------------------
 app.use(express.json({ limit: "10mb" }));
@@ -26,9 +25,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(rootDir, "/client/dist")));
 
+const isProd = process.env.NODE_ENV === "production";
+
+const allowedOrigin = isProd
+  ? process.env.FRONTEND_URL // e.g., https://insights-k5t9.vercel.app
+  : "http://localhost:5173";
+
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://insights-k5t9.onrender.com"],
+    origin: allowedOrigin,
     credentials: true,
   })
 );

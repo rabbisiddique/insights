@@ -169,6 +169,7 @@ const Navbar = () => {
                   <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center">
                     <img
                       className="w-full h-full object-cover rounded-full"
+                      onClick={() => navigate("/profile")}
                       src={
                         user?.avatar ||
                         "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?semt=ais_incoming&w=740&q=80"

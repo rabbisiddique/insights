@@ -1,9 +1,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import baseUrl from "../../utils/baseUrl";
 
 export const aiApi = createApi({
   reducerPath: "ai",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/ai",
+    baseUrl: `${baseUrl}/ai`,
     prepareHeaders: (headers) => {
       headers.set("Content-Type", "application/json");
       return headers;

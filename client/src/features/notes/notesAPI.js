@@ -1,9 +1,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import baseUrl from "../../utils/baseUrl";
 
 export const noteApi = createApi({
   reducerPath: "notes",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/note",
+    baseUrl: `${baseUrl}/note`,
     prepareHeaders: (headers) => {
       headers.set("Content-Type", "application/json");
       return headers;

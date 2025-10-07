@@ -1,9 +1,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import baseUrl from "../../utils/baseUrl";
 
 export const verifyApi = createApi({
   reducerPath: "verify",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api",
+    baseUrl,
     prepareHeaders: (headers) => {
       headers.set("Content-Type", "application/json");
       return headers;
