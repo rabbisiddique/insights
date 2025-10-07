@@ -188,7 +188,11 @@ const aiInteract = async (req, res, next) => {
     req.body;
 
   const userId = req.userId;
-
+  const greetedAlready = messages?.some(
+    (msg) =>
+      msg.role === "assistant" &&
+      /\b(hello|hi|hey|greetings|welcome)\b/i.test(msg.content)
+  );
   try {
     // Validate user
     if (!userId) return AppError(res, "User not found", 400);
@@ -208,8 +212,9 @@ const aiInteract = async (req, res, next) => {
     // -----------------------------
     // 1️⃣ General chat (no note/topic)
     // -----------------------------
+
     if (messages && !topic && !question) {
-      const chatPrompt = generalChatPrompts(messages, counts);
+      const chatPrompt = generalChatPrompts(messages, counts, greetedAlready);
 
       let response = await generateContent(chatPrompt);
       response = cleanAIContent(response);
@@ -233,7 +238,7 @@ const aiInteract = async (req, res, next) => {
       const note = await noteModel.findOne({ _id: noteId, user: userId });
       if (!note) return AppError(res, "Note not found", 404);
 
-      const aiPrompt = QAPrompts(note, question, counts);
+      const aiPrompt = QAPrompts(note, question, counts, greetedAlready);
       let answer = await generateContent(aiPrompt);
       answer = cleanAIContent(answer);
 
@@ -356,15 +361,15 @@ const getAiMessages = async (req, res, next) => {
   try {
     let query = { user: userId, action: "qa" };
 
-    // Only filter by note if noteId exists
     if (noteId && noteId !== "general") {
+      // For specific notes, only get messages for THIS note
       query.note = noteId;
+    } else {
+      // For general chat, only get messages WITHOUT a note
+      query.note = { $exists: false }; // ✅ This is the key change!
     }
 
-    const messages = await aiModel
-      .find(query)
-      // .populate("note", "title content summary tags")
-      .sort({ createdAt: 1 });
+    const messages = await aiModel.find(query).sort({ createdAt: 1 });
 
     const noteInfo =
       noteId && noteId !== "general" && messages.length > 0
