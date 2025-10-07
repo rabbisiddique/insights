@@ -6,8 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "build": "cd ../client && npm install --legacy-peer-deps && npx vite build"
+    "dev": "nodemon src/index.js"
   },
   "keywords": [],
   "author": "",

@@ -1,0 +1,10 @@
+{
+  "name": "fullstack-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "postinstall": "cd server && npm install && cd client && npm install",
+    "build": "cd client && npm run build",
+    "start": "node server/src/index.js"
+  }
+}
