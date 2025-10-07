@@ -24,10 +24,6 @@ const {
   verifyEmailLimiter,
 } = require("../middleware/rateLimit");
 const forgotValidation = require("../middleware/validation/forgotValidation");
-const {
-  generateToken,
-  generateRefreshToken,
-} = require("../utils/generateToken");
 const router = express.Router();
 
 router.post(
@@ -91,22 +87,9 @@ router.get(
     session: false,
     failureRedirect: "/sign-in",
   }),
-  (req, res) => {
-    // User is authenticated here
-    const userId = req.userId;
-
-    // Generate JWT / Refresh token
-    generateToken(res, userId);
-    generateRefreshToken(res, userId);
-
-    // Redirect to frontend after login
-    const frontendUrl = isProd
-      ? "https://insights-k5t9.onrender.com/home"
-      : "http://localhost:5173/home";
-
-    return res.redirect(frontendUrl);
-  }
+  googleSignIn
 );
+
 router.post("/refresh-token", verifyRefreshToken);
 
 module.exports = router;
