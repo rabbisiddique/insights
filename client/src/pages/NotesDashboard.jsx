@@ -1,8 +1,7 @@
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
   Brain,
-  Edit3,
   FileText,
   Globe,
   Heart,
@@ -11,14 +10,17 @@ import {
   Sparkles,
   Star,
   TrendingUp,
+  X,
   Zap,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import Logo from "../components/Logo";
 import { useGetUserQuery } from "../features/auth/authAPI";
 
 const NotesDashboard = () => {
   const navigate = useNavigate();
+  const [showVideo, setShowVideo] = useState(false);
 
   const { data: user, isLoading } = useGetUserQuery(undefined);
 
@@ -140,28 +142,25 @@ const NotesDashboard = () => {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8 }}
-        className="relative z-10 p-6 bg-white/80 backdrop-blur-xl border-b border-gray-200/50"
+        className="relative z-10 p-0 bg-white/80 backdrop-blur-xl border-b border-gray-200/50"
       >
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <motion.div
-            className="flex items-center space-x-4"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-75"></div>
-              <div className="relative p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl">
-                <Edit3 className="w-7 h-7 text-white" />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-3xl font-black bg-gradient-to-r from-blue-700 via-purple-600 to-indigo-700 bg-clip-text text-transparent">
-                NotesAI
-              </h1>
-              <p className="text-sm text-gray-500 font-medium">
-                Professional Edition
-              </p>
-            </div>
-          </motion.div>
+          <div className="relative flex items-center gap-3 group cursor-pointer px-3 py-2 rounded-2xl transition-all duration-500 hover:scale-105">
+            {/* Ambient glow */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl opacity-0 group-hover:opacity-100 blur-2xl transition-all duration-700"></div>
+
+            {/* Logo container */}
+            <Logo />
+
+            {/* Enhanced text */}
+            <span className="relative hidden md:block text-3xl sm:text-2xl font-bold tracking-tight">
+              <span className="bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-white dark:via-slate-100 dark:to-white bg-clip-text text-transparent group-hover:from-blue-600 group-hover:via-purple-600 group-hover:to-pink-600 dark:group-hover:from-blue-400 dark:group-hover:via-purple-400 dark:group-hover:to-pink-400 transition-all duration-500">
+                NotesWise
+              </span>
+              {/* Animated underline */}
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 group-hover:w-full transition-all duration-500 rounded-full shadow-lg shadow-purple-500/50"></span>
+            </span>
+          </div>
 
           <div className="flex items-center space-x-4">
             <motion.div
@@ -252,16 +251,60 @@ const NotesDashboard = () => {
             </motion.button>
           </Link>
 
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            className="px-12 py-5 bg-white/80 backdrop-blur-xl border-2 border-gray-300 hover:border-blue-400 text-gray-700 hover:text-blue-700 rounded-2xl font-bold text-xl shadow-lg hover:shadow-xl transition-all duration-300"
-          >
-            <span className="flex items-center justify-center space-x-3">
-              <Globe className="w-6 h-6" />
-              <span>View Demo</span>
-            </span>
-          </motion.button>
+          <div className="relative flex flex-col items-center justify-center">
+            {/* View Demo Button */}
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setShowVideo(true)}
+              className="px-12 py-5 bg-white/80 backdrop-blur-xl border-2 border-gray-300 hover:border-blue-400 text-gray-700 hover:text-blue-700 rounded-2xl font-bold text-xl shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <span className="flex items-center justify-center space-x-3">
+                <Globe className="w-6 h-6" />
+                <span>View Demo</span>
+              </span>
+            </motion.button>
+
+            {/* Animated Video Popup */}
+            <AnimatePresence>
+              {showVideo && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+                >
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 120, damping: 15 }}
+                    className="relative w-full max-w-5xl aspect-video bg-black rounded-xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.6)]"
+                  >
+                    {/* Video frame with subtle fade-in */}
+                    <motion.video
+                      src="/noteVideo.mp4"
+                      autoPlay
+                      controls
+                      playsInline
+                      className="w-full h-full object-contain"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.6 }}
+                    />
+
+                    {/* Close button */}
+                    <button
+                      onClick={() => setShowVideo(false)}
+                      className="absolute top-3 right-3 bg-white/90 hover:bg-white text-gray-700 rounded-full p-2 shadow-md transition"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </motion.div>
       </motion.section>
 

@@ -14,25 +14,32 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./hooks/useAuth";
 import ChatWithAI from "./pages/ChatWithAI";
 import CreateNote from "./pages/CreateNote";
+import Footer from "./pages/Footer";
 import ForgotPassword from "./pages/ForgotPassword";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import NoteReadPage from "./pages/NoteReadPage";
 import NotesDashboard from "./pages/NotesDashboard";
 import NotFoundPage from "./pages/NotFoundPage";
-import PrivacyPage from "./pages/PrivacyPage";
+import PolicyPages from "./pages/PolicyPages";
 import ProfilePage from "./pages/ProfilePage";
 import PublicPage from "./pages/PublicPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SignUpPage from "./pages/SignUpPage";
-import TermsPage from "./pages/TermsPage";
 import VerifyYourEmail from "./pages/VerifyYourEmail";
 const AppWrapper = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
   const { isLoading } = useAuth();
-  const hideNavbar = ["/", "/login", "/sign-up", "/forgot-password", "/404"];
+  const hideNavbar = [
+    "/",
+    "/login",
+    "/sign-up",
+    "/forgot-password",
+    "/404",
+    "/policy",
+  ];
 
   const showNavbar =
     !hideNavbar.includes(location.pathname) &&
@@ -117,8 +124,7 @@ const AppWrapper = () => {
         <Routes>
           {/* ---------------------- PUBLIC ROUTES ---------------------- */}
           <Route path="/" element={<NotesDashboard />} />
-          <Route path="/terms" element={<TermsPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/policy" element={<PolicyPages />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -207,6 +213,7 @@ const AppWrapper = () => {
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
       </div>
+      <Footer />
     </>
   );
 };

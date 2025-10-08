@@ -27,9 +27,13 @@ const sendMagicLink = async (req, res, next) => {
       expiresAt: new Date(Date.now() + 15 * 60 * 1000), // expires in 15 min
     });
     await magicToken.save();
+    const isProd = process.env.NODE_ENV === "production";
 
+    const frontendUrl = isProd
+      ? `https://insights-k5t9.onrender.com/verify-email/${token}`
+      : `http://localhost:5173/verify-email/${token}`;
     // Build link
-    const link = `http://localhost:5173/verify-email/${token}`;
+    const link = frontendUrl;
 
     // Send email
     await sendEmail({

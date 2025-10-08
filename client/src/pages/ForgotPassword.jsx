@@ -3,6 +3,7 @@ import { Mail } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import Logo from "../components/Logo";
 import { useForgotPasswordMutation } from "../features/auth/authAPI";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { showApiErrors } from "../utils/ShowApiError";
@@ -55,12 +56,22 @@ const ForgotPassword = () => {
             className="text-center mb-8"
           >
             <div className="flex justify-between items-center mb-6">
-              <motion.h1
-                whileHover={{ scale: 1.05 }}
-                className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent"
-              >
-                NotesAI
-              </motion.h1>
+              <div className="relative flex items-center gap-3 group cursor-pointer px-3 py-2 rounded-2xl transition-all duration-500 hover:scale-105">
+                {/* Ambient glow */}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl opacity-0 group-hover:opacity-100 blur-2xl transition-all duration-700"></div>
+
+                {/* Logo container */}
+                <Logo />
+
+                {/* Enhanced text */}
+                <span className="relative hidden md:block text-3xl sm:text-2xl font-bold tracking-tight">
+                  <span className="bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-white dark:via-slate-100 dark:to-white bg-clip-text text-transparent group-hover:from-blue-600 group-hover:via-purple-600 group-hover:to-pink-600 dark:group-hover:from-blue-400 dark:group-hover:via-purple-400 dark:group-hover:to-pink-400 transition-all duration-500">
+                    NotesWise
+                  </span>
+                  {/* Animated underline */}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 group-hover:w-full transition-all duration-500 rounded-full shadow-lg shadow-purple-500/50"></span>
+                </span>
+              </div>
               <motion.button
                 onClick={toggleTheme}
                 className="p-3 rounded-xl bg-gray-100 cursor-pointer dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"

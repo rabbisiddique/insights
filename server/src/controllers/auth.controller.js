@@ -72,12 +72,19 @@ const signIn = async (req, res, next) => {
   try {
     const user = await authModal.findOne({ email });
     if (!user) {
+      console.log("User not found for email:", email);
       return AppError(res, "user not found", 401);
     }
+
+    if (!user.password) {
+      return AppError(res, "password not set for user", 401);
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return AppError(res, "password is wrong", 401);
     }
+
     generateToken(res, user._id);
     generateRefreshToken(res, user._id);
     return res.status(200).json({
@@ -161,9 +168,14 @@ const forgotPassword = async (req, res, next) => {
     user.resetPasswordToken = resetTokenHash;
     user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 mins for expires
     await user.save();
-    const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+
+    const isProd = process.env.NODE_ENV === "production";
+
+    const FRONTEND_URL = isProd
+      ? process.env.FRONTEND_URL
+      : "http://localhost:5173";
     const resetUrl = `${FRONTEND_URL}/reset-password/${resetToken}?email=${encodeURIComponent(
-      userEmail
+      user.email
     )}`;
 
     await sendEmail({

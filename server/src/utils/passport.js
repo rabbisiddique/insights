@@ -2,7 +2,6 @@ const passport = require("passport");
 const authModal = require("../models/auth.model");
 
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const isProd = process.env.NODE_ENV === "production";
 
 passport.use(
   new GoogleStrategy(

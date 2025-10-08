@@ -3,6 +3,7 @@ const {
   generateToken,
   generateRefreshToken,
 } = require("../utils/generateToken");
+const isProd = process.env.NODE_ENV === "production";
 
 const googleSignIn = (req, res, next) => {
   const userId = req.user._id;
