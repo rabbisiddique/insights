@@ -74,7 +74,7 @@ const sendMagicLink = async (req, res, next) => {
     <body>
       <div class="container">
         <h2>🔒 Verify your account</h2>
-        <p>Hello,</p>
+        <p>Hello, ${user.user}</p>
         <p>We just need to confirm your email address to activate your <b>InsightHub</b> account.</p>
         <p>Click the button below to verify:</p>
         <a href="${link}" class="btn">Verify My Account</a>

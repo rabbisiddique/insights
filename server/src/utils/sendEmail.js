@@ -14,7 +14,7 @@ const sendEmail = async ({ to, subject, html }) => {
     });
 
     const mailOptions = {
-      from: `"InsightHub" <no-reply@yourdomain.com>`,
+      from: `"InsightHub" <rabbybhai276@gmail.com>`,
       to,
       subject,
       html,
