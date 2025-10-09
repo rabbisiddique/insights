@@ -50,7 +50,7 @@ export default function HomePage() {
     <>
       {/* Header */}
       <div className="relative min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
-        <div className="max-w-7xl mt-12 mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 md:py-12 lg:py-20">
+        <div className="max-w-7xl mt-20 mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 md:py-12 lg:py-20">
           {/* Header Section */}
           <div className="w-full mb-6 sm:mt-0 mt-1 md:mb-8 p-4 md:p-6 lg:p-8 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-2xl md:rounded-3xl backdrop-blur-sm border border-indigo-200/20 dark:border-indigo-800/30">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0 ">

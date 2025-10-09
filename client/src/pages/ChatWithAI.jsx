@@ -253,7 +253,7 @@ const ChatWithAI = () => {
       </div>
 
       <div
-        className="max-w-6xl mx-auto flex flex-col p-4 sm:p-6 pt-20 sm:pt-24 pb-6 sm:pb-8 relative z-10"
+        className="max-w-6xl mx-auto flex flex-col p-4 sm:p-6 pt-20 sm:pt-24 pb-6 sm:pb-8 relative z-10 mt-10"
         style={{ height: "calc(100vh - 80px)" }}
       >
         {/* Header */}
