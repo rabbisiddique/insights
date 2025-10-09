@@ -171,10 +171,8 @@ const forgotPassword = async (req, res, next) => {
 
     const isProd = process.env.NODE_ENV === "production";
 
-    const FRONTEND_URL = isProd
-      ? process.env.FRONTEND_URL
-      : "http://localhost:5173";
-    const resetUrl = `${FRONTEND_URL}/reset-password/${resetToken}?email=${encodeURIComponent(
+    const link = isProd ? process.env.FRONTEND_URL : "http://localhost:5173";
+    const resetUrl = `${link}/reset-password/${resetToken}?email=${encodeURIComponent(
       user.email
     )}`;
 

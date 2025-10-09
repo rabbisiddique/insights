@@ -8,11 +8,11 @@ const {
   summaryPrompts,
   suggestTagsPrompts,
   QAPrompts,
-  ImproveContentPrompts,
   generalChatPrompts,
   guidedChatPrompts,
   confirmedChatPrompts,
-  ImproveTitlePrompts,
+  improveTitlePrompts,
+  improveContentPrompts,
 } = require("../prompts/ai.prompts");
 
 const summarizeNote = async (req, res, next) => {
@@ -77,13 +77,13 @@ const improveWriting = async (req, res, next) => {
     const target = [];
 
     if (title) {
-      const titlePrompt = ImproveTitlePrompts(title);
+      const titlePrompt = improveTitlePrompts(title);
       improvedTitle = await generateContent(titlePrompt);
       target.push("title");
     }
 
     if (content) {
-      const contentPrompt = ImproveContentPrompts(content);
+      const contentPrompt = improveContentPrompts(content);
       improvedContent = await generateContent(contentPrompt);
       target.push("content");
     }
