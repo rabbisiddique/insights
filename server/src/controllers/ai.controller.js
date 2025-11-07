@@ -40,7 +40,7 @@ const summarizeNote = async (req, res, next) => {
     // ❌ REMOVE THE ELSE BLOCK - Don't create a temporary note
 
     // Generate summary
-    let summary = await generateContent(summaryPrompts(noteData));
+    let summary = await generateContent(summaryPrompts(content));
     summary = cleanAIContent(summary);
 
     // Only save if editing existing note
