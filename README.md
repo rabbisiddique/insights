@@ -11,7 +11,7 @@
 
 ### Authentication
 - Sign up and log in securely.
-- Password reset functionality.
+- **Password reset** and **email verification** are available in development mode only (powered by Nodemailer). These features **do not work in production**.  
 - Personalized homepage after login.
 
 ### Creating Notes
