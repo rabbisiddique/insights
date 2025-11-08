@@ -1,40 +1,55 @@
 # NoteWise
 
-Hey everyone! I’m excited to introduce my application, **NoteWise**—a platform where you can create, manage, and share notes in powerful ways. Let me walk you through it step by step.
-
-## Dashboard
-
-When you open the app, you’ll land on a beautiful dashboard that shows all the features NoteWise has to offer.
-
-## Getting Started
-
-To get started, you need to **sign up or log in**—my app is fully authenticated. Forgot your password? No problem, you can easily reset it. Once logged in, you’ll see your homepage. At first, it will be empty because you haven’t created any notes yet.
-
-## Creating a Note
-
-Here’s how you create a note:
-
-1. Click on **New Note**.
-2. Fill in the **title**, **content**, optional **mood**, and **tags**.
-3. Enhance your title and content using **AI**—get summaries, tag suggestions, and more.
-4. Click **Create**, and your note is saved.
-
-## Other Features
-
-- Edit notes anytime.
-- Archive/Unarchive notes.
-- Update your profile.
-- Make notes public so others can read them.
-
-## Smart Notes
-
-One of the coolest features is **Smart Notes**. Verified users can access this—just click on **Smart Note** in the navbar. You can either:
-
-- **Get Suggestions**: Enter a topic, and AI generates a title, summary, and tags.
-- **Quick Create**: Enter a topic, and a note is instantly created.
-
-You can also interact with AI directly for any note—improve content, add insights, or make it public for everyone to read.
+**NoteWise** is a modern note-taking application that allows you to create, manage, and share notes efficiently. With AI-powered features, you can enhance your notes, generate smart suggestions, and organize your knowledge seamlessly.
 
 ---
 
-**NoteWise** is your one-stop app for smarter, organized, and shareable notes.
+## Features
+
+### Dashboard
+- A sleek, intuitive dashboard showing all your notes and features at a glance.
+
+### Authentication
+- Sign up and log in securely.
+- Password reset functionality.
+- Personalized homepage after login.
+
+### Creating Notes
+- Add a **title**, **content**, **mood**, and **tags**.
+- AI-powered enhancements: summaries, tag suggestions, and more.
+- Save and manage notes effortlessly.
+
+### Note Management
+- Edit, archive/unarchive, and delete notes.
+- Make notes public for others to view.
+- Update your profile.
+
+### Smart Notes (AI-Powered)
+- **Get Suggestions:** Generate a note title, summary, and tags based on a topic.
+- **Quick Create:** Instantly create a note by entering a topic.
+- Interact with AI to enhance or make notes public.
+
+---
+
+## Tech Stack
+
+### Frontend
+- React.js, Redux, Redux Toolkit
+- Tailwind CSS, DaisyUI
+- Framer Motion
+- React Router
+- Vite
+
+### Backend
+- Node.js, Express.js
+- MongoDB, Mongoose, Mongoose Paginate
+- Authentication: JWT, Passport Google OAuth
+- Cloudinary for media management
+- Nodemailer & Resend for emails
+- AI Integration: @google/genai
+- Rate Limiting: @upstash/ratelimit
+
+### Utilities
+- Bcrypt for password hashing
+- Cors, Cookie-Parser
+- Validator: express-validator
