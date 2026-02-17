@@ -1,13 +1,30 @@
-const { GoogleGenAI } = require("@google/genai");
+const axios = require("axios");
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+
 const generateContent = async (content) => {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash-001",
-    contents: content,
-  });
-  return response.text;
+  try {
+    const response = await axios.post(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        model: "openai/gpt-oss-120b:free",
+        messages: [{ role: "user", content }],
+        max_tokens: 600,
+        temperature: 0.7,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    return response.data.choices[0].message.content;
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    throw new Error("AI generation failed");
+  }
 };
 
 module.exports = generateContent;
